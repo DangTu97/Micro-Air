@@ -1,7 +1,7 @@
 /***
 * Name: traffictwowayroad
 * Author: dang tu
-* Description: 
+* Description: traffic simulation of two-way road
 * Tags: Tag1, Tag2, TagN
 ***/
 
@@ -248,9 +248,11 @@ species vehicle skills:[moving] {
 			} else if (check_turn_left() = true) {
 				do speed_up;
 				target <- left.location;
+//				do slow_down(first(get_vehicle_conflict_front()));
 			} else if (check_turn_right() = true) {
 				do speed_up;
 				target <- right.location;
+//				do slow_down(first(get_vehicle_conflict_front()));
 			} else {
 //				target <- front.location + {rnd(0.5), 0};
 				target <- front.location ;

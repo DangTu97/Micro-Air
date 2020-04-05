@@ -1,7 +1,7 @@
 /***
 * Name: trafficdynamic
 * Author: dang tu
-* Description: 
+* Description: moving on rectangle road with dynamic polygon
 * Tags: Tag1, Tag2, TagN
 ***/
 
@@ -11,6 +11,8 @@ model trafficdynamic
 
 global {
 	list<image_file> images <- [image_file("../includes/car.png"), image_file("../includes/motorbike.png")];
+	float environment_size <- 200.0;
+	geometry shape <- square(environment_size);
 	init {
 		create road number: 1 {
 			width <- 6 #m;
@@ -18,7 +20,7 @@ global {
 			float l <- road(0).length;
 			float w <- road(0).width;
 			point p <- road(0).location;
-			shape <- polygon([p - {w/2,l/2}, p + {w/2,-l/20}, p + {w/2,l/2}, p + {-w/2,l/2}]);
+			shape <- polygon([p - {w/2,l/2}, p + {w/2,-l/2}, p + {w/2,l/2}, p + {-w/2,l/2}]);
 			float d <- 5 #m;
 			check_boundary <- polygon([p + {-w/2,l/2 - d}, p + {w/2,l/2 - d}, p + {w/2,l/2}, p + {-w/2,l/2}]);
 		}
@@ -215,7 +217,7 @@ species vehicle skills:[moving] {
 
 species road {
 	init {
-		location <- {10, 10};
+		location <- {100, 100};
 	}
 	geometry check_boundary;
 	float length;
@@ -227,7 +229,7 @@ species road {
 }
 
 experiment my_experiment {
-	float minimum_cycle_duration <- 0.25;
+	float minimum_cycle_duration <- 0.05;
 	output {
 		display my_display {
 			species road aspect: base;
