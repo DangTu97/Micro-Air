@@ -1,7 +1,7 @@
 /***
 * Name: trafficdynamic
 * Author: dang tu
-* Description: 
+* Description: traffic simulation with different directions on one-way road
 * Tags: Tag1, Tag2, TagN
 ***/
 
