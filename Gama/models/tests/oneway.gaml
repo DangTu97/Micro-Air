@@ -17,7 +17,7 @@ global {
 	geometry shape <- square(environment_size);
 	
 	init {
-		list<point> nodes <- [{10,10}, {160,10}];
+		list<point> nodes <- [{10,10}, {170,10}];
 //		list<point> nodes <- [{10,10}, {160,160}];
 		
 		write angle_between(nodes[0], nodes[0] + {10,0}, nodes[1]);
