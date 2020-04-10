@@ -12,7 +12,7 @@ model intersection2
 global {   
 	graph my_graph <- graph([]);
 	list<image_file> images <- [image_file("../includes/car.png"), image_file("../includes/motorbike.png")];
-	int nb_vehicle <- 4;
+	int nb_vehicle <- 10;
 	
 	init {
 
@@ -291,10 +291,10 @@ species vehicle skills:[moving] {
 	}
 	
 	aspect base {
-//		draw current color: #yellow;
-//		draw front color: #red;
-//		draw left color: #blue;
-//		draw right color: #blue;
+		draw current color: #yellow;
+		draw front color: #red;
+		draw left color: #blue;
+		draw right color: #blue;
 		if (name = 'car') {
 			draw images[0] size: {length, width} rotate:heading;
 		}
