@@ -14,8 +14,9 @@ global { graph road_network; }
 
 species roadNode skills: [skill_road_node] {
 	bool is_traffic_signal;
-	int time_to_change <- 100;
+	int time_to_change <- 300;
 	int counter <- rnd (time_to_change);
+	rgb my_color;
 	
 	reflex dynamic when: is_traffic_signal {
 		counter <- counter + 1;
@@ -25,8 +26,14 @@ species roadNode skills: [skill_road_node] {
 		} 
 	}
 	
+	reflex change_color {
+		if (length(stop) > 0) {
+			my_color <- (empty (stop[0]) ? #green : #red);
+		}
+	}
+	
 	aspect base {
-		draw shape at:location color: (is_traffic_signal ? (empty (stop[0]) ? #green : #red) : #white);
+		draw shape at:location color: (is_traffic_signal ? my_color : #white);
 	}
 }
 
@@ -250,7 +257,11 @@ species vehicle skills:[moving] {
 				}   
 			}
 			
-			if ((location overlaps node.shape)) {
+			if (node.is_traffic_signal = true) and (node.my_color = #red) {
+				speed <- 0.0;
+			}
+			
+			if ((location overlaps node.shape) and (node.my_color = #green)) {
 				int index <- (shortest_path index_of next_node);
 				if (index < length(shortest_path) - 1) {
 					current_node <- next_node;
