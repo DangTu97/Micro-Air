@@ -78,8 +78,6 @@ global {
 				source_node <- road_network.vertices[0];
 				final_node <- road_network.vertices[2];
 				do compute_shortest_path;
-				next_node <- shortest_path[1];
-				current_node <- source_node;
 				location <- any_location_in(space);
 				display_polygon <- false;
 				

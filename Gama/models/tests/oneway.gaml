@@ -19,21 +19,6 @@ global {
 	init {
 		list<point> nodes <- [{10,10}, {170,10}];
 //		list<point> nodes <- [{10,10}, {160,160}];
-		
-		write angle_between(nodes[0], nodes[0] + {10,0}, nodes[1]);
-		
-		loop node over:nodes {
-			road_network <- road_network add_node node.location;
-		}
-		road_network <- road_network add_edge (nodes at 0::nodes at 1);
-		
-		loop vertex over:nodes {
-			create roadNode {
-				location <- vertex;
-				shape <- circle(road_width);
-			}
-		}
-		
 		create road {
 			shape <- polyline(reverse(nodes[0], nodes[1]));
 			geom_display <- (shape + road_width);
@@ -41,10 +26,21 @@ global {
 			start <- nodes[0];
 			end <- nodes[1];
 		}
+		
+		road_network <- as_edge_graph(road);
+		
+		loop vertex over:road_network.vertices {
+			create roadNode {
+				shape <- circle(road_width);
+				location <- vertex;
+			}
+		}
+//		write road_network;
+//		write road_network.vertices;
 	}
 	
 	reflex init_traffic {
-		geometry space <- roadNode(0).shape;
+		geometry space <- roadNode(1).shape;
 		list<vehicle> vehicle_ovelap <- vehicle where (each overlaps space);
 		if (length(vehicle_ovelap) = 0) {
 			create vehicle number: nb_vehicle {
@@ -72,11 +68,9 @@ global {
 				source_node <- road_network.vertices[0];
 				final_node <- road_network.vertices[1];
 				do compute_shortest_path;
-				next_node <- shortest_path[1];
-				current_node <- source_node;
 				location <- any_location_in(space);
 				display_polygon <- false;
-				
+//				write shortest_path;
 				road_belong <- road(0);
 				prob <- 1.0;
 			}
