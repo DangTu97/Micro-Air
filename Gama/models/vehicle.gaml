@@ -14,7 +14,7 @@ global { graph road_network; }
 
 species roadNode skills: [skill_road_node] {
 	bool is_traffic_signal;
-	int time_to_change <- 300;
+	int time_to_change <- time_to_change;
 	int counter <- rnd (time_to_change);
 	rgb my_color;
 	
@@ -34,6 +34,7 @@ species roadNode skills: [skill_road_node] {
 	
 	aspect base {
 		draw shape at:location color: (is_traffic_signal ? my_color : #white);
+//		draw shape at:location color:#red;
 	}
 }
 
@@ -57,20 +58,18 @@ species vehicle skills:[moving] {
 	float width;
 	float df;
 	float db;
-	float dx;
-	float dy;
+	float dx; // (db + width/2)
+	float dy; // (df + lenght/2)
 	float max_speed;
-	bool display_polygon;
-	
 	float prob; // probability to go opposite road
-	road road_belong;
 	
 	point final_node;
 	point source_node;
-	point next_node;
-	point current_node;
 	point target;
-	list<point> shortest_path;
+	
+	road road_belong;
+	road next_road;
+	list<road> shortest_path;
 	
 	geometry current;
 	geometry front;
@@ -81,58 +80,39 @@ species vehicle skills:[moving] {
 	list<vehicle> vehicle_left;
 	list<vehicle> vehicle_right;
 	
-	list<vehicle> get_vehicle_conflict_front {
-		list<vehicle> vehicle_conflict_front <- (vehicle at_distance(12 + dy)) where (each.current overlaps self.front);
-		return vehicle_conflict_front;
-	}
+	bool display_polygon;
+	bool check_go_straight;
+	bool check_turn_left;
+	bool check_turn_right;
 	
-	list<vehicle> get_vehicle_conflict_left {
-		list<vehicle> vehicle_conflict_left <- (vehicle at_distance(12 + dy)) where (each.current overlaps self.left);
-		return vehicle_conflict_left;
-	}
-	
-	list<vehicle> get_vehicle_conflict_right {
-		list<vehicle> vehicle_conflict_right <- (vehicle at_distance(12 + dy)) where (each.current overlaps self.right);
-		return vehicle_conflict_right;
-	}
-	
-	bool check_go_straight {
-		list<vehicle> vehicle_conflict_front <- get_vehicle_conflict_front();
+	bool is_on_road(geometry poly) {
 		bool is_on_road <- false;
 		ask road {
-			if (myself.front.location overlaps self.geom_display){
+			if (poly.location overlaps self.geom_display){
 				is_on_road <- true;
 			}
 		}
-		return (length(vehicle_conflict_front) = 0  and is_on_road) ? true : false;
-//		return (length(vehicle_conflict_front) = 0) ? true : false;
+		return is_on_road;
 	}
 	
-	bool check_turn_left {
-		list<vehicle> vehicle_conflict_left <- get_vehicle_conflict_left();
-		bool is_on_road <- false;
-		ask road {
-			if (myself.left.location overlaps self.geom_display){
-				is_on_road <- true;
-			}
-		}
-		return ((length(vehicle_conflict_left) = 0) and is_on_road) ? true : false;
+	action get_vehicle {
+		vehicle_front <- (vehicle at_distance(vehicle_range)) where (each.current overlaps self.front);
+		vehicle_left <- (vehicle at_distance(vehicle_range)) where (each.current overlaps self.left);
+		vehicle_right <- (vehicle at_distance(vehicle_range)) where (each.current overlaps self.right);
 	}
 	
-	bool check_turn_right {
-		list<vehicle> vehicle_conflict_right <- get_vehicle_conflict_right();
-		bool is_on_road <- false;
-		ask road {
-			if (myself.right.location overlaps self.geom_display){
-				is_on_road <- true;
-			}
-		}
-		return ((length(vehicle_conflict_right) = 0) and is_on_road) ? true : false;
+	action check_direction {
+		check_go_straight <- (length(vehicle_front) = 0  and is_on_road(front)) ? true : false;
+		check_turn_left <- (length(vehicle_left) = 0  and is_on_road(left)) ? true : false;
+		check_turn_right <- (length(vehicle_right) = 0  and is_on_road(right)) ? true : false;
 	}
 	
 	action update_polygon {
 		current <- polygon([location + {dy, -dx}, location + {dy, dx},
 						  location + {- dy, dx}, location + {-dy, -dx}]) rotated_by heading;
+	    
+	    point current_node <- road_belong.start;
+	    point next_node <- road_belong.end;
 	    
 	    float d <- distance_to(current_node, next_node);
 		float a <- (next_node - current_node).location.x;
@@ -140,9 +120,9 @@ species vehicle skills:[moving] {
 								  
 		float size <- (speed/max_speed);
 	    //ddy: dynamic dy of front polygon
-		float ddy <- 0.1*dy + size*dy;
-		float k1 <- (1.0 + 0.1 + size)*dy/d;
-		float k2 <- - (1.0 + 0.1 + size)*dy/d;
+		float ddy <- minimun_polygon_size*dy + size*dy;
+		float k1 <- (1.0 + minimun_polygon_size + size)*dy/d;
+		float k2 <- - (1.0 + minimun_polygon_size + size)*dy/d;
 		
 		point p1 <- location + {k1*a, k1*b};
 		point p2 <- location + {k2*a, k2*b};
@@ -162,154 +142,93 @@ species vehicle skills:[moving] {
 		// left location with left polygon of size (dx,dy)
 		point left_point <- front_point + {b*D/sqrt(a*a + b*b), - a*D/sqrt(a*a + b*b)};
 		
-		left <- polygon([left_point + {ddy, -0.5*dx}, left_point + {ddy, 0.5*dx},
-						  left_point + {- ddy, 0.5*dx}, left_point + {-ddy, -0.5*dx}]) rotated_by angle;
+		left <- polygon([left_point + {ddy, -polygon_width_size*dx}, left_point + {ddy, polygon_width_size*dx},
+						  left_point + {- ddy, polygon_width_size*dx}, left_point + {-ddy, -polygon_width_size*dx}]) rotated_by angle;
 		
 		// right location with right polygon of size (dx,dy)
 		point right_point <- front_point + { -b*D/sqrt(a*a + b*b), a*D/sqrt(a*a + b*b)};	
 			  
-		right <- polygon([right_point + {ddy, -0.5*dx}, right_point + {ddy, 0.5*dx},
-						  right_point + {- ddy, 0.5*dx}, right_point + {-ddy, -0.5*dx}]) rotated_by angle;
+		right <- polygon([right_point + {ddy, -polygon_width_size*dx}, right_point + {ddy, polygon_width_size*dx},
+						  right_point + {- ddy, polygon_width_size*dx}, right_point + {-ddy, -polygon_width_size*dx}]) rotated_by angle;
 						  
 		target <- front.location;
 	}
 	
 	action compute_shortest_path {
-   		path my_path <- path_between(road_network, source_node, final_node);
-        list my_path <- string(my_path) split_with('::[]()as path');
-       
-    	loop p over:my_path {
-    		list a <- string(p) split_with('{}');
-    		shortest_path <+ point('{' + a[0] + '}');
-    	}
+   		path path_computed <- path_between(road_network, source_node, final_node);
+   		list road_id_list <- string(path_computed) split_with('[()],road as path');
+//   		write road_id_list;
+		if (length(road_id_list) > 0) {
+			loop i from: 0 to:length(road_id_list) - 1 {
+				shortest_path <+ road(int(road_id_list[i]));
+			}
+		}  
 	}
 
 	action speed_up {
-		speed <- min(max_speed, speed + 0.05);
+		speed <- min(max_speed, speed + acceleration_factor);
 	}
 	
 	action slow_down(vehicle vehicle_ahead) {
-		speed <- max(0.0, speed - 0.4);
+		speed <- max(0.0, speed - deceleration_factor);
 	}
 	
-//	reflex move when:target != nil {
-//		if (distance_to(location, next_node) < 6) {
-//			// when vehicle reaches final destination, do die
-//			if (next_node = final_node) {
-//				do die;
-//			}
-//			
-//			// assign new next_node, current_node when vehicle reaches a node which is not the final destination
-//			roadNode node;
-//			ask roadNode {
-//				if (distance_to(myself.next_node, self.location) < 1) {
-//					node <- self;
-//				}   
-//			}
-//			if ((location overlaps node.shape) and (node.is_traffic_signal = true)) {
-//				int index <- (shortest_path index_of next_node);
-//				if (index < length(shortest_path) - 1) {
-//					current_node <- next_node;
-//					next_node <- shortest_path[index + 1];
-//				} else {
-//					next_node <- nil;
-//					do die;
-//				}
-//			}
-//		}
-//		
-//		list<vehicle> vehicle_conflict_front <- get_vehicle_conflict_front();
-//		list<vehicle> vehicle_conflict_left <- get_vehicle_conflict_left();
-//		list<vehicle> vehicle_conflict_right <- get_vehicle_conflict_right();
-//		
-//		if (speed > max_speed) {
-//			speed <- max_speed;
-//		}
-//
-//		if (check_go_straight() = true) {
-//			do speed_up;
-//			target <- front.location;
-//		} else if (check_turn_left() = true) {
-//			do speed_up;
-//			target <- left.location;
-//		} else if (check_turn_right() = true) {
-//			do speed_up;
-//			target <- right.location;
-//		} else {
-//			target <- front.location;
-//			do slow_down(first(get_vehicle_conflict_front()));
-//		}
-//		do goto target: target speed:speed;
-//	}
+	action get_next_road {
+		int index <- (shortest_path index_of road_belong);
+		if (index < length(shortest_path) - 1) {
+			next_road <- shortest_path[index + 1];
+		} else {
+			next_road <- nil;
+		}
+	}
 	
 	// different moving skill
 	reflex move when:target != nil {
-		if (distance_to(location, next_node) < 6) {
-			// when vehicle reaches final destination, do die
-			if (next_node = final_node) {
+		do get_vehicle;
+		do check_direction;
+//		
+//		if (distance_to(location, road_belong.end) < distance_check) {
+//			do get_next_road;
+//			if (next_road = nil) {
+//				do die;
+//			} else {
+//				road_belong <- next_road;
+//			}
+//		}
+		
+		if next_road = nil {
+			if (distance_to(location, road_belong.end) < distance_check) {
 				do die;
-			}
-			// assign new next_node, current_node when vehicle reaches a node which is not the final destination
-			roadNode node;
-			ask roadNode {
-				if (distance_to(myself.next_node, self.location) < 1) {
-					node <- self;
-				}   
-			}
-			
-			if (node.is_traffic_signal = true) and (node.my_color = #red) {
-				speed <- 0.0;
-			}
-			
-			if ((location overlaps node.shape) and (node.my_color = #green)) {
-				int index <- (shortest_path index_of next_node);
-				if (index < length(shortest_path) - 1) {
-					current_node <- next_node;
-					next_node <- shortest_path[index + 1];
-					road_belong <- first(road where ((each.start = current_node) 
-										 and (each.end = next_node)));
-				} else {
-					next_node <- nil;
-					do die;
-				}
-			}
+			} 
+		} else if (location overlaps next_road.geom_display) {
+			road_belong <- next_road;
+			do get_next_road;
 		}
 		
-		list<vehicle> vehicle_conflict_front <- get_vehicle_conflict_front();
-		list<vehicle> vehicle_conflict_left <- get_vehicle_conflict_left();
-		list<vehicle> vehicle_conflict_right <- get_vehicle_conflict_right();
-		
-		vehicle_front <- get_vehicle_conflict_front();
-		vehicle_left <- get_vehicle_conflict_left();
-		vehicle_right <- get_vehicle_conflict_right();
-		
-		if (road_belong.linked_road != nil) {
-			if (location overlaps road_belong.linked_road.geom_display) {
-				//turn right if it can
-				if (check_turn_right() = true) {
-					do speed_up;
-					target <- right.location;
-				} else if (check_go_straight() = true) {
-					do speed_up;
-					target <- front.location;
-				} else if ( (check_turn_left() = true) and 
-					first(get_vehicle_conflict_front()).road_belong.angle = self.road_belong.angle) {
-					do speed_up;
-					target <- flip(prob) ? left.location : front.location;
-				} else {
-					target <- right.location;
-					speed <- max(speed - 0.4, 0.02);
-//					write speed;
-//					do slow_down(first(get_vehicle_conflict_front()));
-				}
-			}
-		}
-		
-		if (location overlaps road_belong.geom_display) {
-			if (check_go_straight() = true) {
+		if (road_belong.linked_road != nil) and (location overlaps road_belong.linked_road.geom_display) {
+			//turn right if it can
+			if (check_turn_right = true) {
+				do speed_up;
+				target <- right.location;
+			} else if (check_go_straight = true) {
 				do speed_up;
 				target <- front.location;
-			} else if (check_turn_left() = true) {
+			} else if ((check_turn_left = true) and (first(vehicle_front) != nil) and first(vehicle_front).road_belong.angle = self.road_belong.angle) {
+				do speed_up;
+				target <- flip(prob) ? left.location : front.location;
+			} else {
+				target <- right.location;
+				speed <- max(speed - deceleration_factor, 0.02);
+//					write speed;
+//					do slow_down(first(get_vehicle_conflict_front()));
+			}
+		}
+		
+		else if (location overlaps road_belong.geom_display) {
+			if (check_go_straight = true) {
+				do speed_up;
+				target <- front.location;
+			} else if (check_turn_left = true) {
 				// turn teft
 				if (left.location overlaps road_belong.geom_display) {
 					do speed_up;
@@ -319,17 +238,28 @@ species vehicle skills:[moving] {
 						target <- flip(prob) ? left.location : front.location;
 					}
 				}
-			} else if (check_turn_right() = true) {
+			} else if (check_turn_right = true) {
 				do speed_up;
 				target <- right.location;
 			} else {
-				if (first(get_vehicle_conflict_front()).road_belong.angle = self.road_belong.angle){
-					target <- front.location;
-					do slow_down(first(get_vehicle_conflict_front()));
-				} else {
-					target <- right.location;
-					speed <- max(speed - 0.4, 0.02);
-				}
+				target <- front.location;
+				do slow_down(first(vehicle_front));
+			}
+		} 
+		 
+		// when vehicle is outside of the road 
+		else {
+			if (check_go_straight = true) {
+				do speed_up;
+				target <- front.location;
+			} else if (check_turn_left = true) {
+				do speed_up;
+				target <- left.location;
+			} else if (check_turn_right = true) {
+				do speed_up;
+				target <- right.location;
+			} else {
+				speed <- 0.0;
 			}
 		}
 		
@@ -357,5 +287,3 @@ species vehicle skills:[moving] {
 		}
 	}
 }
-
-
