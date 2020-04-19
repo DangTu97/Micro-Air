@@ -19,18 +19,13 @@ global {
 	
 	init {
 		list<point> nodes <- [{10,10}, {160,10}, {160,4}, {10,4}];
-		loop node over:nodes {
-			road_network <- road_network add_node node.location;
-		}
-		road_network <- road_network add_edge (nodes at 0::nodes at 1);
-		road_network <- road_network add_edge (nodes at 2::nodes at 3);
+//		loop node over:nodes {
+//			road_network <- road_network add_node node.location;
+//		}
+//		road_network <- road_network add_edge (nodes at 0::nodes at 1);
+//		road_network <- road_network add_edge (nodes at 2::nodes at 3);
 		
-		loop vertex over:nodes {
-			create roadNode {
-				location <- vertex;
-				shape <- circle(road_width);
-			}
-		}
+		
 		
 		create road {
 			shape <- polyline(reverse(nodes[0], nodes[1]));
@@ -48,20 +43,29 @@ global {
 			end <- nodes[3];
 		}
 		
-		road(0).linked_road <- road(1);
-		road(1).linked_road <- road(0);
-//		write road(1).angle;
-//		write road(0).angle;
+		road_network <- as_edge_graph(road);
 		
+		loop vertex over:road_network.vertices {
+			create roadNode {
+				shape <- circle(road_width);
+				location <- vertex;
+			}
+		}
+		
+		road(0).linked_road <- road(1);
+		road(1).linked_road <- road(0);	
 	}
 	
 	reflex init_traffic {
-		geometry space_left <- polygon([{10,7}, {16,7}, {16,13}, {10,13}]);
-		geometry space_right <- polygon([{160,1}, {160,7}, {154,7}, {154,4}]);
+//		geometry space_left <- polygon([{10,7}, {16,7}, {16,13}, {10,13}]);
+//		geometry space_right <- polygon([{160,1}, {160,7}, {154,7}, {154,4}]);
+
+		geometry space_left <- roadNode(1).shape;
+		geometry space_right <- roadNode(3).shape;
 		
 		list<vehicle> vehicle_ovelap_spaceleft <- vehicle where (each overlaps space_left);
 		if (length(vehicle_ovelap_spaceleft) = 0) {
-			create vehicle number: 8 {
+			create vehicle number: 15 {
 				name <- flip(0.2) ? 'car' : 'motorbike';
 				if name = 'car' {
 					length <- 3.8 #m;
@@ -83,14 +87,12 @@ global {
 					max_speed <- rnd(0.2, 0.7) #m/#s;
 				}
 				
-				source_node <- road_network.vertices[0];
-				final_node <- road_network.vertices[1];
+				source_node <- road_network.vertices[1];
+				final_node <- road_network.vertices[0];
 				do compute_shortest_path;
-				next_node <- shortest_path[1];
-				current_node <- source_node;
 				location <- any_location_in(space_left);
 				display_polygon <- false;
-				
+//				write shortest_path;
 				road_belong <- road(0);
 				prob <- 1.0;
 			}
@@ -121,14 +123,12 @@ global {
 					max_speed <- rnd(0.2, 0.7) #m/#s;
 				}
 				
-				source_node <- road_network.vertices[2];
-				final_node <- road_network.vertices[3];
+				source_node <- road_network.vertices[3];
+				final_node <- road_network.vertices[2];
 				do compute_shortest_path;
-				next_node <- shortest_path[1];
-				current_node <- source_node;
 				location <- any_location_in(space_right);
 				display_polygon <- false;
-				
+//				write shortest_path;
 				road_belong <- road(1);
 				prob <- 0.0;
 			}
