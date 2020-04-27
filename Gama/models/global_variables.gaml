@@ -20,6 +20,6 @@ global {
 	float deceleration_factor <- 0.4;
 	
 	float time_to_change <- 200; // for traffic light
-	float road_width <- 3;
-	float distance_check <- 4; // distance condition to check whether a vehicle reach to next node
+	float road_width <- 6.0;
+	float distance_check <- 6.0; // distance condition to check whether a vehicle reach to next node
 }
