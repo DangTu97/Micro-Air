@@ -28,7 +28,7 @@ global {
 		road_network <- as_edge_graph(road);
 		
 		loop vertex over:road_network.vertices {
-			create roadNode {
+			create traffic_light {
 				shape <- circle(road_width);
 				location <- vertex;
 			}
@@ -38,7 +38,7 @@ global {
 	}
 	
 	reflex init_traffic {
-		geometry my_space <- roadNode(1).shape;
+		geometry my_space <- traffic_light(0).shape;
 		list<vehicle> vehicle_ovelap <- vehicle where (each overlaps my_space);
 		if (length(vehicle_ovelap) = 0) {
 			create vehicle number: 10 {
@@ -73,13 +73,12 @@ global {
 			prob <- 0.0;
 //			location <- source_node + {rnd(3.0), rnd(6.0) - 3};
 			location <- any_location_in(my_space);
-			start_node <- road_belong.shape.points[1];
-			target_node <- road_belong.shape.points[0];
+			start_node <- road_belong.shape.points[0];
+			target_node <- road_belong.shape.points[1];
 			angle <- angle_between(start_node, start_node + {10,0}, target_node);
 			do compute_road_belong_nodes;
 			do update_polygon;
 			target_space <- polyline([target_node - {1.5*road_width, 0}, target_node + {1.5*road_width, 0}]) rotated_by (angle + 90);
-	
 		}
 	}
 	}
