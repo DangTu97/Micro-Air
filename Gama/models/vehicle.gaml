@@ -12,23 +12,44 @@ import "global_variables.gaml"
 
 global { graph road_network; }
 
-species roadNode  {
+species traffic_light  {
 	bool is_traffic_signal;
-	int time_to_change <- time_to_change;
-	int counter <- rnd (time_to_change);
-	rgb my_color;
+	int counter;
+	bool is_green;
+	bool is_yellow;
+	geometry my_geom;
+	float direction_control;
 	
+	reflex dynamic when: is_traffic_signal {
+		counter <- counter + 1;
+        if (counter >= green_time + red_time + yellow_time) { 
+            counter <- 0;
+        } 
+        if (counter <= green_time) {
+        	is_green <- true;
+        	is_yellow <- false;
+        } else if (counter > green_time and counter <= green_time + yellow_time) {
+        	is_green <- false;
+        	is_yellow <- true;
+        }
+        else {
+        	is_green <- false;
+        	is_yellow <- false;
+        }
+	}
 	aspect base {
-		draw shape at:location color:#red;
+		draw shape at:location color:is_green ? #green : (is_yellow ? #yellow : #red);
+		draw my_geom color:#blue;
 	}
 }
 
 species road { 
+	traffic_light light_belong;
 	bool is_twoway;
 	geometry geom_display;
-	
+	rgb color <- #white;
 	aspect base {    
-		draw geom_display border: #grey  color: #white ;
+		draw geom_display color: color border:#white ;
 		if is_twoway {
 			draw shape color:#grey;
 		}
@@ -83,11 +104,13 @@ species vehicle skills:[moving] {
 	bool on_right_side;
 	
 	geometry target_space;
+	geometry free_space;
 	
 	bool is_on_road(geometry geom) {
 		bool is_on_road <- false;
 		ask road {
-			if (geom.location overlaps self.geom_display){
+//			if ((geom.location overlaps self.geom_display) and (self = myself.road_belong)) {
+			if (geom.location overlaps self.geom_display) {
 				is_on_road <- true;
 			}
 		}
@@ -95,7 +118,7 @@ species vehicle skills:[moving] {
 	}
 	
 	action get_side {
-		if (angle_between(start_node, target_node, location) < 90 and angle_between(start_node, target_node, location) > 0) {
+		if (angle_between(start_node, target_node, location) < 180 and angle_between(start_node, target_node, location) > 0) {
 			on_right_side <- true;
 		} else {
 			on_right_side <- false;
@@ -113,6 +136,12 @@ species vehicle skills:[moving] {
 		check_turn_left <- (length(vehicle_left) = 0  and is_on_road(left)) ? true : false;
 		check_turn_right <- (length(vehicle_right) = 0  and is_on_road(right)) ? true : false;
 	}
+
+//	action check_direction {
+//		check_go_straight <- (length(vehicle_front) = 0  and (front.location overlaps road_belong.geom_display)) ? true : false;
+//		check_turn_left <- (length(vehicle_left) = 0  and (left.location overlaps road_belong.geom_display)) ? true : false;
+//		check_turn_right <- (length(vehicle_right) = 0  and (right.location overlaps road_belong.geom_display)) ? true : false;
+//	}
 	
 	action update_polygon {
 		angle <- angle_between(start_node, start_node + {10,0}, target_node);
@@ -179,9 +208,12 @@ species vehicle skills:[moving] {
 	}
 	
 	action compute_road_belong_nodes {
-//		write first(road_belong.shape.points);
-//		write last(road_belong.shape.points);
-//		if distance_to(location, first(road_belong.shape.points)) < distance_to(location, last(road_belong.shape.points)) {
+//		if (distance_to(start_node,first(road_belong.shape.points)) < 1) {
+//			road_belong_nodes <- road_belong.shape.points;
+//		} else {
+//			road_belong_nodes <- reverse(road_belong.shape.points);
+//		}
+
 		if (start_node = first(road_belong.shape.points)) {
 			road_belong_nodes <- road_belong.shape.points;
 		} else if (start_node = last(road_belong.shape.points)) {
@@ -196,19 +228,70 @@ species vehicle skills:[moving] {
 			target_node <- road_belong_nodes[idx + 1];
 		} else {
 			road_belong <- get_next_road();
-	
+			
 			if (road_belong = nil) {
 				do die;
 			} else {
 				do compute_road_belong_nodes;
 				target_node <- road_belong_nodes[1];
-				
 			}
 		}
 		angle <- angle_between(start_node, start_node + {10,0}, target_node);
+		
 		if (target_node != nil) {
-			target_space <- polyline([target_node - {1.5*road_width, 0}, target_node + {1.5*road_width, 0}]) rotated_by (angle + 90);
+//			target_space <- polyline([target_node - {1.5*road_width, 0}, target_node + {1.5*road_width, 0}]) rotated_by (angle + 90);
+			
+			point future_node;
+			point x1;
+			point x2;
+			point x3;
+			point x4; 
+			// x1, x2, x3, x4 form a parallelogram
+			int my_idx <- (road_belong_nodes index_of target_node);
+			if (my_idx < length(road_belong_nodes) - 1) {
+				future_node <- road_belong_nodes[my_idx + 1];
+			} else {
+				road my_feature_road <- get_next_road();
+				if (my_feature_road != nil) {
+					if (target_node = first(my_feature_road.shape.points)) {
+						future_node <- my_feature_road.shape.points[1];
+					} else if (target_node = last(my_feature_road.shape.points)) {
+						future_node <- reverse(my_feature_road.shape.points)[1];
+					}
+				}
+			}
+			
+//			write future_node;
+			if (future_node != nil)  {
+				float alpha <- angle_between(target_node, start_node, future_node);
+				
+				float k;
+				if (alpha = 180) {
+					target_space <- polyline([target_node - {1.5*road_width, 0}, target_node + {1.5*road_width, 0}]) rotated_by (angle + 90);
+				} else {
+					if (alpha > 180) { alpha <- alpha - 180; if (alpha < 90) { alpha <- 180 - alpha; }}
+					float k <- road_width/sin(180 - alpha);
+					x2 <- target_node;
+					float a <- (start_node - target_node).x;
+					float b <- (start_node - target_node).y;
+					float d <- distance_to(target_node, start_node);
+					point x1 <- x2 + {k*a/d, k*b/d};
+					
+					float A <- (future_node - target_node).x;
+					float B <- (future_node - target_node).y;
+					float D <- distance_to(future_node, target_node);
+					point x3 <- x2 + {k*A/D, k*B/D};
+					
+					point center <- (x1 + x3)/2;
+					point x4 <- center*2 - x2;
+					point x4 <- center*2 - x2;
+					point newpoint <- x2*2 - x4;
+					target_space <- polyline([newpoint,x4]);
+				}
+			} else { target_space <- polyline([target_node - {1.5*road_width, 0}, target_node + {1.5*road_width, 0}]) rotated_by (angle + 90); }
+			
 		}
+		
 	}
 	
 	road get_next_road {
@@ -252,7 +335,7 @@ species vehicle skills:[moving] {
 				do speed_up;
 				target <- front.location;
 			} else if ((check_turn_left = true) and (first(vehicle_front) != nil) 
-			and first(vehicle_front).target_node = self.target_node) {
+			and first(vehicle_front).target_node = target_node) {
 //				do speed_up;
 //				target <- flip(prob) ? left.location : front.location;
 				if flip(prob) {
@@ -292,13 +375,17 @@ species vehicle skills:[moving] {
 	}
 	
 	action control_twoway_ver2 {
-		if ( distance_to(location, target_node) < 20.0) {
+		if ( distance_to(location, target_node) < 10) {
 			target <- front.location;
 			if (check_go_straight = true) {
 				do speed_up;
-			} else {
-				do slow_down(first(vehicle_front));
+			} else if (check_turn_right = true) {
+				do speed_up;
+				target <- right.location;
 			}
+			else {
+				do slow_down(first(vehicle_front));
+			}	
 		} else {
 			do get_side;
 			if (on_right_side = false) { // if on left side
@@ -402,6 +489,13 @@ species vehicle skills:[moving] {
 //		return value;
 //	}
 	
+	action follow_traffic_light {
+		if (road_belong.light_belong != nil) and (front overlaps road_belong.light_belong.my_geom) and (angle = road_belong.light_belong.direction_control) 
+		and  (road_belong.light_belong.is_green = false) {
+			speed <- 0;
+		}
+	}
+	
 	// different moving skill
 	reflex move  {
 		do get_vehicle;
@@ -417,16 +511,20 @@ species vehicle skills:[moving] {
 			point p1 <- start_node;
 			point p2 <- target_node;
 			road my_road <- road_belong;
+			list<point> my_nodes <- road_belong_nodes;
+			geometry my_target_space <- target_space;
 			do change_node;
 			do update_polygon;
-			
-			if check_right_side(front) = false {
+			do check_direction;
+			if (check_right_side(front) = false) or (is_on_road(front) = false) {
 				start_node <- p1;
 				target_node <- p2;
 				angle <- angle_between(start_node, start_node + {10,0}, target_node);
 				road_belong <- my_road;
+				road_belong_nodes <- my_nodes;
+				target_space <- my_target_space;
 				do update_polygon;
-				target_space <- polyline([target_node - {1.5*road_width, 0}, target_node + {1.5*road_width, 0}]) rotated_by (angle + 90);
+				do check_direction;
 			}
 		}
 		
@@ -436,6 +534,7 @@ species vehicle skills:[moving] {
 			do control_oneway;
 		}
 		
+		do follow_traffic_light;
 		do goto target: target speed:speed;
 		do update_polygon;
 	}
@@ -446,7 +545,8 @@ species vehicle skills:[moving] {
 			draw front color: #red;
 			draw left color: #blue;
 			draw right color: #blue;
-			draw target_space color:#red;
+//			draw target_space color:#red;
+//			draw free_space color:#red;
 		}
 		
 		if (name = 'car') {
