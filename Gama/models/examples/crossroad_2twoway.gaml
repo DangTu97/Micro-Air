@@ -9,7 +9,7 @@ model crossroad2twoway
 
 /* Insert your model definition here */
 global {
-	list<image_file> images <- [image_file("../includes/car.png"), image_file("../includes/motorbike.png")];
+	list<image_file> images <- [image_file("../../includes/car.png"), image_file("../../includes/motorbike.png")];
 	
 	init {
 		 create road number: 1 {
