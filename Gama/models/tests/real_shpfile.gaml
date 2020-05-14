@@ -94,7 +94,7 @@ global {
 				if (my_feature_road != nil) {
 					if (target_node = first(my_feature_road.shape.points)) {
 						future_node <- my_feature_road.shape.points[1];
-					} else if (start_node = last(my_feature_road.shape.points)) {
+					} else if (target_node = last(my_feature_road.shape.points)) {
 						future_node <- reverse(my_feature_road.shape.points)[1];
 					}
 				}

@@ -78,7 +78,7 @@ global {
 			target_space <- polyline([target_node - {1.5*road_width, 0}, target_node + {1.5*road_width, 0}]) rotated_by (angle + 90);
 		}
 		
-		create vehicle number: 0 {
+		create vehicle number: 10 {
 			name <- flip(0.3) ? 'car' : 'motorbike';
 			if name = 'car' {
 				length <- 3.8 #m;
@@ -105,7 +105,7 @@ global {
 			do compute_shortest_path;
 			road_belong <-  shortest_path[0];	
 			display_polygon <- false;
-			prob <- 1.0;
+			prob <- 0.0;
 			location <- any_location_in(source_node + {rnd(3.0), rnd(5.0)});
 			start_node <- road_belong.shape.points[0];
 			target_node <- road_belong.shape.points[1];

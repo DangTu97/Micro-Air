@@ -36,7 +36,7 @@ global {
 	}
 	
 	reflex init_traffic when:mod(cycle,200) = 0{
-		create vehicle number: 10 {
+		create vehicle number: 20 {
 			name <- flip(0.3) ? 'car' : 'motorbike';
 			if name = 'car' {
 				length <- 3.8 #m;
@@ -64,7 +64,7 @@ global {
 //			write shortest_path;
 
 			road_belong <-  shortest_path[0];
-			display_polygon <- true;
+			display_polygon <- false;
 			prob <- 0.0;
 			location <- source_node + {rnd(3.0), rnd(3.0)};
 			start_node <- road_belong.shape.points[5];
@@ -119,7 +119,7 @@ global {
 			} else { target_space <- target_node; }
 		}
 		
-		create vehicle number: 10 {
+		create vehicle number: 15 {
 			name <- flip(0.3) ? 'car' : 'motorbike';
 			if name = 'car' {
 				length <- 3.8 #m;

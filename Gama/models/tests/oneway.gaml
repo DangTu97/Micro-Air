@@ -85,7 +85,7 @@ global {
 }
 
 experiment my_experiment {
-	float minimum_cycle_duration <- 0.01;
+	float minimum_cycle_duration <- 0.02;
 	output {
 		display my_display background: #grey{
 			species road aspect: base;

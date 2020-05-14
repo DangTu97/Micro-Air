@@ -35,7 +35,8 @@ global {
 			location <- {100, 100 + road_width};
 			is_traffic_signal <- true;
 			shape <- circle(0.5);
-			counter <- 0;
+//			counter <- 0;
+			counter <- 1000/2;
 			is_green <- false;
 			direction_control <- 270;
 			my_geom <- polyline([location, location + {road_width, 0}]);
@@ -45,7 +46,8 @@ global {
 			location <- {100 - road_width, 100};
 			is_traffic_signal <- true;
 			shape <- circle(0.5);
-			counter <- red_time;
+//			counter <- red_time;
+			counter <- 1000/4;
 			is_green <- true;
 			direction_control <- 0;
 			my_geom <- polyline([location, location + {0, road_width}]);
@@ -55,7 +57,8 @@ global {
 			location <- {100 + road_width, 100};
 			is_traffic_signal <- true;
 			shape <- circle(0.5);
-			counter <- red_time;
+//			counter <- red_time;
+			counter <- 1000*3/4;
 			is_green <- true;
 			direction_control <- 180;
 			my_geom <- polyline([location, location + {0, -road_width}]);
@@ -93,8 +96,8 @@ global {
 				max_speed <- rnd(0.2, 0.7) #m/#s;
 			}
 
-//			source_node <- one_of(targets);
-			source_node <- one_of([targets[3], targets[1]]);
+			source_node <- one_of(targets);
+//			source_node <- one_of([targets[3], targets[1]]);
 			final_node <-  one_of(targets where (each != source_node));
 
 			do compute_shortest_path;
