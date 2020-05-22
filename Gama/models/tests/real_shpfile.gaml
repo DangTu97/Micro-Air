@@ -52,7 +52,7 @@ global {
 			
 			road_belong <-  shortest_path[0];
 			display_polygon <- false;
-			prob <- 0.0;
+			prob_go_opposite <- 0.0;
 			start_node <- source_node;
 			do compute_road_belong_nodes;
 			target_node <- road_belong_nodes[1];
@@ -161,7 +161,7 @@ global {
 			
 			road_belong <-  shortest_path[0];
 			display_polygon <- false;
-			prob <- 0.0;
+			prob_go_opposite <- 0.0;
 			start_node <- source_node;
 			do compute_road_belong_nodes;
 			target_node <- road_belong_nodes[1];

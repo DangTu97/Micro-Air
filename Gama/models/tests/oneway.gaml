@@ -44,23 +44,23 @@ global {
 			create vehicle number: 10 {
 			name <- flip(0.3) ? 'car' : 'motorbike';
 			if name = 'car' {
-				length <- 3.8 #m;
-				width <- 1.5 #m;
-				df <- 0.25 #m;
-				db <- 0.15 #m;
+				length <- CAR_LENGTH;
+				width <- CAR_WIDTH;
+				df <- CAR_DF;
+				db <- CAR_DB;
 				dx <- width/2 + db;
 				dy <- length/2 + df;
-				speed <- 0.1;
-				max_speed <- rnd(0.4, 1.0) #m/#s;
+				speed <- INIT_SPEED;
+				max_speed <- 0.2 + rnd(CAR_MAXSPEED - 0.2);
 			} else {
-				length <- 1.8 #m;
-				width <- 0.7 #m;
-				df <- 0.15 #m;
-				db <- 0.1 #m;
+				length <- MOTORBIKE_LENGTH;
+				width <- MOTORBIKE_WIDTH;
+				df <- MOTORBIKE_DF;
+				db <- MOTORBIKE_DB;
 				dx <- width/2 + db;
 				dy <- length/2 + df;
-				speed <- 0.1;
-				max_speed <- rnd(0.2, 0.7) #m/#s;
+				speed <- INIT_SPEED;
+				max_speed <- 0.2 + rnd(MOTORBIKE_MAXSPEED - 0.2);
 			}
 			
 			source_node <- road_network.vertices[1];
@@ -70,7 +70,8 @@ global {
 
 			road_belong <-  shortest_path[0];
 			display_polygon <- false;
-			prob <- 0.0;
+			prob_go_opposite <- PROB_GO_OPPOSITE;
+			prob_turn_right <- PROB_TURN_RIGHT;
 //			location <- source_node + {rnd(3.0), rnd(6.0) - 3};
 			location <- any_location_in(my_space);
 			start_node <- road_belong.shape.points[0];
@@ -78,14 +79,13 @@ global {
 			angle <- angle_between(start_node, start_node + {10,0}, target_node);
 			do compute_road_belong_nodes;
 			do update_polygon;
-			target_space <- polyline([target_node - {1.5*road_width, 0}, target_node + {1.5*road_width, 0}]) rotated_by (angle + 90);
+			target_space <- polyline([target_node - {1.5*road_width, 0}, target_node + {1.5*road_width, 0}]) rotated_by (angle + 90); }
 		}
-	}
 	}
 }
 
 experiment my_experiment {
-	float minimum_cycle_duration <- 0.02;
+	float minimum_cycle_duration <- TIME_STEP;
 	output {
 		display my_display background: #grey{
 			species road aspect: base;

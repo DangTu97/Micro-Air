@@ -22,7 +22,7 @@ global {
 		}
 		
 		create traffic_light {
-			location <- {100, 100 - road_width};
+			location <- {100, 99 - road_width};
 			is_traffic_signal <- true;
 			shape <- circle(0.5);
 			counter <- 0;
@@ -32,33 +32,33 @@ global {
 		}
 		
 		create traffic_light {
-			location <- {100, 100 + road_width};
+			location <- {100, 101 + road_width};
 			is_traffic_signal <- true;
 			shape <- circle(0.5);
-//			counter <- 0;
-			counter <- 1000/2;
+			counter <- 0;
+//			counter <- 1000/2;
 			is_green <- false;
 			direction_control <- 270;
 			my_geom <- polyline([location, location + {road_width, 0}]);
 		}
 		
 		create traffic_light {
-			location <- {100 - road_width, 100};
+			location <- {99 - road_width, 100};
 			is_traffic_signal <- true;
 			shape <- circle(0.5);
-//			counter <- red_time;
-			counter <- 1000/4;
+			counter <- red_time;
+//			counter <- 1000/4;
 			is_green <- true;
 			direction_control <- 0;
 			my_geom <- polyline([location, location + {0, road_width}]);
 		}
 		
 		create traffic_light {
-			location <- {100 + road_width, 100};
+			location <- {101 + road_width, 100};
 			is_traffic_signal <- true;
 			shape <- circle(0.5);
-//			counter <- red_time;
-			counter <- 1000*3/4;
+			counter <- red_time;
+//			counter <- 1000*3/4;
 			is_green <- true;
 			direction_control <- 180;
 			my_geom <- polyline([location, location + {0, -road_width}]);
@@ -72,28 +72,28 @@ global {
 		write road_network;
 	}
 	
-	reflex init_traffic when:mod(cycle,10)=0 {
+	reflex init_traffic when:mod(cycle,15)=0 {
 		list<point> targets <- [{100,0}, {0,100},{200,100}, {100,200}];
-		create vehicle number: 1 {
-			name <- flip(0.3) ? 'car' : 'motorbike';
+		create vehicle number: 2 {
+			name <- flip(0.15) ? 'car' : 'motorbike';
 			if name = 'car' {
-				length <- 3.8 #m;
-				width <- 1.5 #m;
-				df <- 0.25 #m;
-				db <- 0.15 #m;
+				length <- CAR_LENGTH;
+				width <- CAR_WIDTH;
+				df <- CAR_DF;
+				db <- CAR_DB;
 				dx <- width/2 + db;
 				dy <- length/2 + df;
-				speed <- 0.1;
-				max_speed <- rnd(0.4, 1.0) #m/#s;
+				speed <- INIT_SPEED;
+				max_speed <- CAR_MAXSPEED;
 			} else {
-				length <- 1.8 #m;
-				width <- 0.7 #m;
-				df <- 0.15 #m;
-				db <- 0.1 #m;
+				length <- MOTORBIKE_LENGTH;
+				width <- MOTORBIKE_WIDTH;
+				df <- MOTORBIKE_DF;
+				db <- MOTORBIKE_DB;
 				dx <- width/2 + db;
 				dy <- length/2 + df;
-				speed <- 0.1;
-				max_speed <- rnd(0.2, 0.7) #m/#s;
+				speed <- INIT_SPEED;
+				max_speed <- MOTORBIKE_MAXSPEED;
 			}
 
 			source_node <- one_of(targets);
@@ -105,7 +105,8 @@ global {
 			
 			road_belong <-  shortest_path[0];
 			display_polygon <- false;
-			prob <- 0.0;
+			prob_go_opposite <- PROB_GO_OPPOSITE;
+			prob_turn_right <- PROB_TURN_RIGHT;
 			start_node <- source_node;
 			do compute_road_belong_nodes;
 			target_node <- road_belong_nodes[1];
@@ -186,7 +187,7 @@ global {
 }
 
 experiment my_experiment {
-	float minimum_cycle_duration <- 0.03;
+	float minimum_cycle_duration <- TIME_STEP;
 	output {
 		display my_display background: #grey{
 			species road aspect: base;
