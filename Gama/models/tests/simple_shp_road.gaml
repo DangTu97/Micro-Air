@@ -39,23 +39,23 @@ global {
 		create vehicle number: 20 {
 			name <- flip(0.3) ? 'car' : 'motorbike';
 			if name = 'car' {
-				length <- 3.8 #m;
-				width <- 1.5 #m;
-				df <- 0.25 #m;
-				db <- 0.15 #m;
+				length <- CAR_LENGTH;
+				width <- CAR_WIDTH;
+				df <- CAR_DF;
+				db <- CAR_DB;
 				dx <- width/2 + db;
 				dy <- length/2 + df;
-				speed <- 0.1;
-				max_speed <- rnd(0.4, 1.0) #m/#s;
+				speed <- INIT_SPEED;
+				max_speed <- 0.2 + rnd(CAR_MAXSPEED - 0.2);
 			} else {
-				length <- 1.8 #m;
-				width <- 0.7 #m;
-				df <- 0.15 #m;
-				db <- 0.1 #m;
+				length <- MOTORBIKE_LENGTH;
+				width <- MOTORBIKE_WIDTH;
+				df <- MOTORBIKE_DF;
+				db <- MOTORBIKE_DB;
 				dx <- width/2 + db;
 				dy <- length/2 + df;
-				speed <- 0.1;
-				max_speed <- rnd(0.2, 0.7) #m/#s;
+				speed <- INIT_SPEED;
+				max_speed <- 0.2 + rnd(MOTORBIKE_MAXSPEED - 0.2);
 			}
 			
 			source_node <- road_network.vertices[1];
@@ -65,7 +65,8 @@ global {
 
 			road_belong <-  shortest_path[0];
 			display_polygon <- false;
-			prob <- 0.0;
+			prob_go_opposite <- PROB_GO_OPPOSITE;
+			prob_turn_right <- PROB_TURN_RIGHT;
 			location <- source_node + {rnd(3.0), rnd(3.0)};
 			start_node <- road_belong.shape.points[5];
 			target_node <- road_belong.shape.points[4];
@@ -122,23 +123,23 @@ global {
 		create vehicle number: 15 {
 			name <- flip(0.3) ? 'car' : 'motorbike';
 			if name = 'car' {
-				length <- 3.8 #m;
-				width <- 1.5 #m;
-				df <- 0.25 #m;
-				db <- 0.15 #m;
+				length <- CAR_LENGTH;
+				width <- CAR_WIDTH;
+				df <- CAR_DF;
+				db <- CAR_DB;
 				dx <- width/2 + db;
 				dy <- length/2 + df;
-				speed <- 0.1;
-				max_speed <- rnd(0.4, 1.0) #m/#s;
+				speed <- INIT_SPEED;
+				max_speed <- 0.2 + rnd(CAR_MAXSPEED - 0.2);
 			} else {
-				length <- 1.8 #m;
-				width <- 0.7 #m;
-				df <- 0.15 #m;
-				db <- 0.1 #m;
+				length <- MOTORBIKE_LENGTH;
+				width <- MOTORBIKE_WIDTH;
+				df <- MOTORBIKE_DF;
+				db <- MOTORBIKE_DB;
 				dx <- width/2 + db;
 				dy <- length/2 + df;
-				speed <- 0.1;
-				max_speed <- rnd(0.2, 0.7) #m/#s;
+				speed <- INIT_SPEED;
+				max_speed <- 0.2 + rnd(MOTORBIKE_MAXSPEED - 0.2);
 			}
 			
 			source_node <- road_network.vertices[0];
@@ -148,7 +149,8 @@ global {
 	
 			road_belong <-  shortest_path[0];
 			display_polygon <- false;
-			prob <- 0.0;
+			prob_go_opposite <- PROB_GO_OPPOSITE;
+			prob_turn_right <- PROB_TURN_RIGHT;
 			location <- source_node + {rnd(1.0), rnd(3.0)};
 			start_node <- road_belong.shape.points[0];
 			target_node <- road_belong.shape.points[1];
@@ -213,7 +215,7 @@ species my_species {
 }
 
 experiment my_experiment {
-	float minimum_cycle_duration <- 0.01;
+	float minimum_cycle_duration <- TIME_STEP;
 	output {
 		display my_display background: #grey{
 			species road aspect: base;
