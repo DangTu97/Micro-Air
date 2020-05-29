@@ -575,33 +575,36 @@ species vehicle skills:[moving] {
 				}
 			} else if (road_belong.light_belong.is_yellow = false) and (road_belong.light_belong.is_green = false){
 				speed <- 0;
-			}
+			} 
+//			else {
+//				do speed_up;
+//			}
 		}
 	}
 	
 	action control_at_intersection {
 		list<list<int>> check_list <- [[270,0], [90,180], [180,270], [0,90]];
 		list<vehicle> vehicle_intersection <- (vehicle at_distance(road_width) where (([angle, each.angle] in check_list) and (each.front overlaps front)));
+		check_go_straight <- (length(vehicle_intersection) > 0) ? false : check_go_straight;
 		
 		if (check_go_straight = true) {
-				do speed_up;
-				target <- front.location;
-			} else if (check_turn_left = true) and (check_right_side(left) = true) {
-				do speed_up;
-				target <- left.location;
-			} else if (check_turn_right = true) and flip(prob_turn_right) {
-				do speed_up;
-				target <- right.location;
-			} else if (check_turn_left = true) and (check_right_side(left) = false ) and flip(prob_go_opposite) {
-				do speed_up;
-				target <- left.location;
-			} else {
-				target <- front.location;
-				speed <- 0;
-			}
-			
-		check_go_straight <- (length(vehicle_intersection) > 0) ? false : check_go_straight;
-		if ({100, 100} overlaps front) or ({100, 100} overlaps current) {
+			do speed_up;
+			target <- front.location;
+		} else if (check_turn_left = true) and (check_right_side(left) = true) {
+			do speed_up;
+			target <- left.location;
+		} else if (check_turn_right = true) and flip(prob_turn_right) {
+			do speed_up;
+			target <- right.location;
+		} else if (check_turn_left = true) and (check_right_side(left) = false ) and flip(prob_go_opposite) {
+			do speed_up;
+			target <- left.location;
+		} else {
+			target <- front.location;
+			speed <- 0.0;
+		}	
+				
+		if (block_space(0) overlaps front) or (block_space(0) overlaps current) {
 			target <- right;
 		}
 	}
@@ -627,7 +630,9 @@ species vehicle skills:[moving] {
 			do change_node;
 			do update_polygon;
 			do check_direction;
-			if (check_right_side(front) = false) or (is_on_road(front) = false) or (check_go_straight = false) {
+			
+			// or (check_go_straight = false)
+			if (check_right_side(front) = false) or (is_on_road(front) = false)  {
 				start_node <- p1;
 				target_node <- p2;
 				angle <- angle_between(start_node, start_node + {10,0}, target_node);
@@ -643,7 +648,8 @@ species vehicle skills:[moving] {
 			if distance_to(location, {100, 100}) < distance_check {
 				do control_at_intersection;
 			} else {
-				do control_twoway;
+				//do control_twoway;
+				do control_twoway_ver2;
 			}
 			
 		} else {
@@ -676,5 +682,11 @@ species vehicle skills:[moving] {
 		if (name = 'motorbike') {
 			draw images[1] size: {length, width} rotate:heading;
 		}
+	}
+}
+
+species block_space {
+	aspect base {
+		draw shape color: #blue;
 	}
 }

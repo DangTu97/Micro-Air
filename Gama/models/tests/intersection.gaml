@@ -11,6 +11,7 @@ import "../vehicle.gaml"
 
 global {
 	geometry shape <- square(500);
+//	float step <- 1 #hour;
 	init {
 		list<list<point>> my_nodes <- [[{100,0}, {100,100}], [{100,100}, {100,200}], [{0,100}, {100,100}], [{100,100}, {200,100}]];
 		loop nodes over:my_nodes {
@@ -70,6 +71,13 @@ global {
 		
 		road_network <- as_edge_graph(road);
 		write road_network;
+		
+		
+		// ----------------------
+		create block_space {
+			location <- {100,100};
+			shape <- circle(2);
+		}
 	}
 	
 	reflex init_traffic when:mod(cycle,15)=0 {
@@ -186,13 +194,17 @@ global {
 	}
 }
 
+
+
 experiment my_experiment {
 	float minimum_cycle_duration <- TIME_STEP;
 	output {
 		display my_display background: #grey{
 			species road aspect: base;
 			species traffic_light aspect: base;
+			species block_space aspect: base;
 			species vehicle aspect: base;
+			
 		}
 	}
 }

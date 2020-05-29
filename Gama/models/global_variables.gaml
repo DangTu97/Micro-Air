@@ -14,10 +14,10 @@ global {
 	list<image_file> images <- [image_file("../includes/car.png"), image_file("../includes/motorbike.png")];
 	
 	float vehicle_range <- 20.0;
-	float minimun_polygon_size <- 0.1;
+	float minimun_polygon_size <- 0.15;
 	float polygon_width_size <- 0.5; // for the left and right polygon
 	float acceleration_factor <- 0.1;
-	float deceleration_factor <- 0.4;
+	float deceleration_factor <- 0.5;
 	
 	float green_time <- 400; // for traffic light
 	float yellow_time <- 80;
