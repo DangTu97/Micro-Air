@@ -7,14 +7,15 @@
 
 model oneway
 import "../vehicle.gaml"
-
+import "../global_variables.gaml"
 /* Insert your model definition here */
 
 global {   
 	graph road_network <- graph([]);
 	int nb_vehicle <- 10;
-	float road_width <- 3.0 #m;
+	float step <- 0.05#s;
 	geometry shape <- square(environment_size);
+	float road_width <- 5#m;
 	
 	init {
 		list<point> nodes <- [{10,10}, {170,10}];
@@ -42,8 +43,8 @@ global {
 		list<vehicle> vehicle_ovelap <- vehicle where (each overlaps my_space);
 		if (length(vehicle_ovelap) = 0) {
 			create vehicle number: 10 {
-			name <- flip(0.3) ? 'car' : 'motorbike';
-			if name = 'car' {
+			name <- flip(0.3) ? 'CAR' : (flip(0.05) ? 'BUS' : 'MOTORBIKE');
+			if name = 'CAR' {
 				length <- CAR_LENGTH;
 				width <- CAR_WIDTH;
 				df <- CAR_DF;
@@ -51,8 +52,8 @@ global {
 				dx <- width/2 + db;
 				dy <- length/2 + df;
 				speed <- INIT_SPEED;
-				max_speed <- 0.2 + rnd(CAR_MAXSPEED - 0.2);
-			} else {
+				max_speed <- CAR_MAXSPEED;
+			} else if name = 'MOTORBIKE' {
 				length <- MOTORBIKE_LENGTH;
 				width <- MOTORBIKE_WIDTH;
 				df <- MOTORBIKE_DF;
@@ -60,7 +61,16 @@ global {
 				dx <- width/2 + db;
 				dy <- length/2 + df;
 				speed <- INIT_SPEED;
-				max_speed <- 0.2 + rnd(MOTORBIKE_MAXSPEED - 0.2);
+				max_speed <- MOTORBIKE_MAXSPEED;
+			} else {
+				length <- BUS_LENGTH;
+				width <- BUS_WIDTH;
+				df <- BUS_DF;
+				db <- BUS_DB;
+				dx <- width/2 + db;
+				dy <- length/2 + df;
+				speed <- INIT_SPEED;
+				max_speed <- BUS_MAXSPEED;
 			}
 			
 			source_node <- road_network.vertices[1];

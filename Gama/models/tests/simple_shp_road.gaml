@@ -16,6 +16,8 @@ global {
 	file shape_file_roads <-  file("../includes/multilines.shp");
 	geometry shape <- envelope(shape_file_roads) + 2*road_width;
 	bool  display3D<- false;
+	float step <- STEP;
+	
 	init {
 		create road from: shape_file_roads {
 			geom_display <- shape + road_width;
@@ -35,10 +37,10 @@ global {
 		write road_network;
 	}
 	
-	reflex init_traffic when:mod(cycle,200) = 0{
-		create vehicle number: 20 {
-			name <- flip(0.3) ? 'car' : 'motorbike';
-			if name = 'car' {
+	reflex init_traffic when:mod(cycle,50) = 0{
+		create vehicle number: 10 {
+			name <- flip(CAR_PERCENT) ? 'CAR' : 'MOTORBIKE';
+			if name = 'CAR' {
 				length <- CAR_LENGTH;
 				width <- CAR_WIDTH;
 				df <- CAR_DF;
@@ -46,7 +48,7 @@ global {
 				dx <- width/2 + db;
 				dy <- length/2 + df;
 				speed <- INIT_SPEED;
-				max_speed <- 0.2 + rnd(CAR_MAXSPEED - 0.2);
+				max_speed <- CAR_MAXSPEED;
 			} else {
 				length <- MOTORBIKE_LENGTH;
 				width <- MOTORBIKE_WIDTH;
@@ -55,7 +57,7 @@ global {
 				dx <- width/2 + db;
 				dy <- length/2 + df;
 				speed <- INIT_SPEED;
-				max_speed <- 0.2 + rnd(MOTORBIKE_MAXSPEED - 0.2);
+				max_speed <- MOTORBIKE_MAXSPEED;
 			}
 			
 			source_node <- road_network.vertices[1];
@@ -67,10 +69,29 @@ global {
 			display_polygon <- false;
 			prob_go_opposite <- PROB_GO_OPPOSITE;
 			prob_turn_right <- PROB_TURN_RIGHT;
-			location <- source_node + {rnd(3.0), rnd(3.0)};
 			start_node <- road_belong.shape.points[5];
 			target_node <- road_belong.shape.points[4];
 			angle <- angle_between(start_node, start_node + {10,0}, target_node);
+			
+			// location
+			point p1 <- start_node;
+			float a <- (target_node - start_node).x;
+			float b <- (target_node - start_node).y;
+			float d <- distance_to(target_node, start_node);
+			point p1 <- start_node;
+			point p2 <- p1 + {road_width*a/d, road_width*b/d};
+			
+			point center <- (p1 + p2)/2;
+			float D <- 0.5*road_width;
+			point free_space_center <- center + {b*D/sqrt(a*a + b*b), - a*D/sqrt(a*a + b*b)};
+			if angle_between(start_node, target_node, free_space_center) > 180 {
+				free_space_center <- center + { -b*D/sqrt(a*a + b*b), a*D/sqrt(a*a + b*b)};	
+			}	
+			point p3 <- free_space_center*2 - p1;
+			point p4 <- free_space_center*2 - p2;
+			free_space <- polygon([p1,p2,p3,p4, p1]);
+			location <- any_location_in(free_space);
+			
 			do compute_road_belong_nodes;
 			do update_polygon;
 			
@@ -120,9 +141,9 @@ global {
 			} else { target_space <- target_node; }
 		}
 		
-		create vehicle number: 15 {
-			name <- flip(0.3) ? 'car' : 'motorbike';
-			if name = 'car' {
+		create vehicle number: 10 {
+			name <- flip(CAR_PERCENT) ? 'CAR' : 'MOTORBIKE';
+			if name = 'CAR' {
 				length <- CAR_LENGTH;
 				width <- CAR_WIDTH;
 				df <- CAR_DF;
@@ -130,7 +151,7 @@ global {
 				dx <- width/2 + db;
 				dy <- length/2 + df;
 				speed <- INIT_SPEED;
-				max_speed <- 0.2 + rnd(CAR_MAXSPEED - 0.2);
+				max_speed <- CAR_MAXSPEED;
 			} else {
 				length <- MOTORBIKE_LENGTH;
 				width <- MOTORBIKE_WIDTH;
@@ -139,24 +160,40 @@ global {
 				dx <- width/2 + db;
 				dy <- length/2 + df;
 				speed <- INIT_SPEED;
-				max_speed <- 0.2 + rnd(MOTORBIKE_MAXSPEED - 0.2);
+				max_speed <- MOTORBIKE_MAXSPEED;
 			}
 			
 			source_node <- road_network.vertices[0];
 			final_node <- road_network.vertices[1];
 			do compute_shortest_path;
-//			write shortest_path;
-	
 			road_belong <-  shortest_path[0];
 			display_polygon <- false;
 			prob_go_opposite <- PROB_GO_OPPOSITE;
 			prob_turn_right <- PROB_TURN_RIGHT;
-			location <- source_node + {rnd(1.0), rnd(3.0)};
 			start_node <- road_belong.shape.points[0];
 			target_node <- road_belong.shape.points[1];
 			angle <- angle_between(start_node, start_node + {10,0}, target_node);
 			do compute_road_belong_nodes;
 			do update_polygon;
+			
+			// location
+			point p1 <- start_node;
+			float a <- (target_node - start_node).x;
+			float b <- (target_node - start_node).y;
+			float d <- distance_to(target_node, start_node);
+			point p1 <- start_node;
+			point p2 <- p1 + {road_width*a/d, road_width*b/d};
+			
+			point center <- (p1 + p2)/2;
+			float D <- 0.5*road_width;
+			point free_space_center <- center + {b*D/sqrt(a*a + b*b), - a*D/sqrt(a*a + b*b)};
+			if angle_between(start_node, target_node, free_space_center) > 180 {
+				free_space_center <- center + { -b*D/sqrt(a*a + b*b), a*D/sqrt(a*a + b*b)};	
+			}	
+			point p3 <- free_space_center*2 - p1;
+			point p4 <- free_space_center*2 - p2;
+			free_space <- polygon([p1,p2,p3,p4, p1]);
+			location <- any_location_in(free_space);
 			
 //			target_space <- polyline([target_node - {1.5*road_width, 0}, target_node + {1.5*road_width, 0}]) rotated_by (angle + 90);
 			
