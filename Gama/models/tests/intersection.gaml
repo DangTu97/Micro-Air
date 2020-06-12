@@ -7,11 +7,12 @@
 
 model intersection
 import "../vehicle.gaml"
+import "../global_variables.gaml"
 /* Insert your model definition here */
 
 global {
 	geometry shape <- square(500);
-//	float step <- 1 #hour;
+	float step <- 0.05#s;
 	init {
 		list<list<point>> my_nodes <- [[{100,0}, {100,100}], [{100,100}, {100,200}], [{0,100}, {100,100}], [{100,100}, {200,100}]];
 		loop nodes over:my_nodes {
@@ -25,7 +26,7 @@ global {
 		create traffic_light {
 			location <- {100, 99 - road_width};
 			is_traffic_signal <- true;
-			shape <- circle(0.5);
+			shape <- circle(1);
 			counter <- 0;
 			is_green <- false;
 			direction_control <- 90;
@@ -35,7 +36,7 @@ global {
 		create traffic_light {
 			location <- {100, 101 + road_width};
 			is_traffic_signal <- true;
-			shape <- circle(0.5);
+			shape <- circle(1);
 			counter <- 0;
 //			counter <- 1000/2;
 			is_green <- false;
@@ -46,7 +47,7 @@ global {
 		create traffic_light {
 			location <- {99 - road_width, 100};
 			is_traffic_signal <- true;
-			shape <- circle(0.5);
+			shape <- circle(1);
 			counter <- red_time;
 //			counter <- 1000/4;
 			is_green <- true;
@@ -57,7 +58,7 @@ global {
 		create traffic_light {
 			location <- {101 + road_width, 100};
 			is_traffic_signal <- true;
-			shape <- circle(0.5);
+			shape <- circle(1);
 			counter <- red_time;
 //			counter <- 1000*3/4;
 			is_green <- true;
@@ -80,18 +81,17 @@ global {
 		}
 	}
 	
-	reflex init_traffic when:mod(cycle,15)=0 {
+	reflex init_traffic when:mod(cycle,20)=0 {
 		list<point> targets <- [{100,0}, {0,100},{200,100}, {100,200}];
-		create vehicle number: 2 {
-			name <- flip(0.15) ? 'car' : 'motorbike';
-			if name = 'car' {
+		create vehicle number: 6 {
+			name <- flip(CAR_PERCENT) ? 'CAR' : 'MOTORBIKE';
+			if name = 'CAR' {
 				length <- CAR_LENGTH;
 				width <- CAR_WIDTH;
 				df <- CAR_DF;
 				db <- CAR_DB;
 				dx <- width/2 + db;
 				dy <- length/2 + df;
-				speed <- INIT_SPEED;
 				max_speed <- CAR_MAXSPEED;
 			} else {
 				length <- MOTORBIKE_LENGTH;
@@ -100,12 +100,11 @@ global {
 				db <- MOTORBIKE_DB;
 				dx <- width/2 + db;
 				dy <- length/2 + df;
-				speed <- INIT_SPEED;
 				max_speed <- MOTORBIKE_MAXSPEED;
 			}
-
+			speed <- INIT_SPEED;
+			
 			source_node <- one_of(targets);
-//			source_node <- one_of([targets[3], targets[1]]);
 			final_node <-  one_of(targets where (each != source_node));
 
 			do compute_shortest_path;
@@ -139,9 +138,7 @@ global {
 			free_space <- polygon([p1,p2,p3,p4, p1]);
 			location <- any_location_in(free_space);
 			do update_polygon;
-			
-//			target_space <- polyline([target_node - {1.5*road_width, 0}, target_node + {1.5*road_width, 0}]) rotated_by (angle + 90);
-			
+						
 			point future_node;
 			point x1;
 			point x2;
@@ -202,9 +199,8 @@ experiment my_experiment {
 		display my_display background: #grey{
 			species road aspect: base;
 			species traffic_light aspect: base;
-			species block_space aspect: base;
+//			species block_space aspect: base;
 			species vehicle aspect: base;
-			
 		}
 	}
 }

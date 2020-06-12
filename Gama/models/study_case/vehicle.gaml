@@ -6,7 +6,7 @@
 ***/
 
 model vehicle
-import "global_variables.gaml"
+import "../global_variables.gaml"
 
 /* Insert your model definition here */
 
@@ -639,6 +639,13 @@ species vehicle skills:[moving] {
 //			do change_node;
 //			do update_polygon;
 //		}
+
+
+		//and cycle < 1000		
+		if distance_to(location, target_node) <= 5 {
+			max_speed <- 2.0 + rnd(2.0);
+			speed <- max_speed;
+		}
 
 		// action change node for twoway road
 		if (current overlaps target_space) {
