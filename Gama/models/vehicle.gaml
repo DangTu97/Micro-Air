@@ -15,48 +15,50 @@ global {
 	float vehicle_average_speed;
 	int vehicle_counter;
 	float vehicle_timer;
+	string model_name;
 }
 
 species traffic_light  {
-	bool is_traffic_signal;
 	int counter;
+	rgb color;
+	float t_g;
+	float t_y;
+	float t_r;
+	
+	// additional variables
 	bool is_green;
-	bool is_yellow;
 	geometry my_geom;
 	float direction_control;
 	
-	action time_counter {
+	reflex change_color {
 		counter <- counter + 1;
+        if (counter >= t_g + t_y + t_r) { 
+            counter <- 0;
+        } else if (counter <= t_g ) {
+        	color <- #green;
+        	is_green <- true;
+        } else if ((counter > t_g) and (counter <= t_g + t_y)) {
+        	color <- #yellow;
+        	is_green <- false;
+        } else {
+        	color <- #red;
+        	is_green <- false;
+        }
 	}
 	
-	reflex change_color when: is_traffic_signal {
-		do time_counter;
-        if (counter >= green_time + red_time + yellow_time) { 
-            counter <- 0;
-        } 
-        if (counter <= green_time) {
-        	is_green <- true;
-        	is_yellow <- false;
-        } else if (counter > green_time and counter <= green_time + yellow_time) {
-        	is_green <- false;
-        	is_yellow <- true;
-        }
-        else {
-        	is_green <- false;
-        	is_yellow <- false;
-        }
-	}
 	aspect base {
-		draw shape at:location color:is_green ? #green : (is_yellow ? #yellow : #red);
+		draw shape at:location color:color;
 		draw my_geom color:#blue;
 	}
 }
 
 species road { 
-	traffic_light light_belong;
 	bool is_twoway;
+	float road_width;
+	traffic_light light_belong;
 	geometry geom_display;
 	rgb color <- #white;
+	
 	aspect base {    
 		draw geom_display color: color border:#white ;
 		if is_twoway {
@@ -65,18 +67,8 @@ species road {
 	}  
 }
 
-
-species space {
-	geometry geom_display1;
-	geometry geom_display2;
-	aspect default {
-		draw geom_display1 color:#green;
-		draw geom_display2 color:#green;
-	}
-}
-
 species vehicle skills:[moving] {
-	string name;
+	string type;
 	float length;
 	float width;
 	float df;
@@ -85,49 +77,41 @@ species vehicle skills:[moving] {
 	float dy; // (df + lenght/2)
 	float max_speed;
 	float prob_go_opposite; // probability to go opposite road
-	float prob_turn_right;
-	
+	float prob_turn_right; // probability to turn right
 	point final_node;
 	point source_node;
 	point target;
-	
 	road road_belong;
 	list<point> road_belong_nodes; //with direction
 	point start_node;
 	point target_node;
 	float angle;
 	list<road> shortest_path;
-	
 	geometry current;
 	geometry front;
 	geometry left;
 	geometry right;
-	
-	list<vehicle> vehicle_front;
-	list<vehicle> vehicle_left;
-	list<vehicle> vehicle_right;
-	
-	bool display_polygon;
 	bool check_go_straight;
 	bool check_turn_left;
 	bool check_turn_right;
+	float acceleration_factor;
+	float deceleration_factor;
+	
+	// additional attributes
+	list<vehicle> vehicle_front;
+	list<vehicle> vehicle_left;
+	list<vehicle> vehicle_right;
+	float distance_check;
+	float minimun_length_size;
+	bool display_polygon;
 	bool on_right_side;
+	float width_size; // for right and left polygons
 	
 	geometry target_space;
 	geometry free_space;
 	
-	// more polygons for motorbike
-	geometry left2;
-	geometry right2;
-	geometry back;
 	
-	bool check_turn_left2;
-	bool check_turn_right2;
-	bool check_back;
-	list<vehicle> vehicle_left2;
-	list<vehicle> vehicle_right2;
-	list<vehicle> vehicle_back;
-	
+	// parameter
 	int count;
 	int timer;
 	string gender;
@@ -152,55 +136,8 @@ species vehicle skills:[moving] {
 		}
 	}
 	
-	action get_vehicle {
-		vehicle_front <- (vehicle at_distance(vehicle_range)) where (each.current overlaps self.front);
-		vehicle_left <- (vehicle at_distance(vehicle_range)) where (each.current overlaps self.left);
-		vehicle_right <- (vehicle at_distance(vehicle_range)) where (each.current overlaps self.right);
-		
-		if (name = "motorbike") {
-			vehicle_left2 <- (vehicle at_distance(vehicle_range)) where (each.current overlaps self.left2);
-			vehicle_right2 <- (vehicle at_distance(vehicle_range)) where (each.current overlaps self.right2);
-			vehicle_back <- (vehicle at_distance(vehicle_range)) where (each.current overlaps self.back);
-		}
-	}
-	
-//	action check_direction {
-//		check_go_straight <- (length(vehicle_front) = 0  and is_on_road(front)) ? true : false;
-//		check_turn_left <- (length(vehicle_left) = 0  and is_on_road(left)) ? true : false;
-//		check_turn_right <- (length(vehicle_right) = 0  and is_on_road(right)) ? true : false;
-//		
-//		if (name = "motorbike") {
-//			check_turn_left2 <- (length(vehicle_left2) = 0  and is_on_road(left2)) ? true : false;
-//			check_turn_right2 <- (length(vehicle_right2) = 0  and is_on_road(right2)) ? true : false;
-//			check_back <- (length(vehicle_back) = 0  and is_on_road(back)) ? true : false;
-//		}
-//	}
-
-//	action check_direction {
-//		check_go_straight <- (length(vehicle_front) = 0  and (front.location overlaps road_belong.geom_display)) ? true : false;
-//		check_turn_left <- (length(vehicle_left) = 0  and (left.location overlaps road_belong.geom_display)) ? true : false;
-//		check_turn_right <- (length(vehicle_right) = 0  and (right.location overlaps road_belong.geom_display)) ? true : false;
-//		
-//		if (name = "motorbike") {
-//			check_turn_left2 <- (length(vehicle_left2) = 0 and (left2.location overlaps road_belong.geom_display)) ? true : false;
-//			check_turn_right2 <- (length(vehicle_right2) = 0  and (right2.location overlaps road_belong.geom_display)) ? true : false;
-//			check_back <- (length(vehicle_back) = 0  and (back.location overlaps road_belong.geom_display)) ? true : false;
-//		}
-//	}
-	
-	action check_direction {
-		check_go_straight <- (length(vehicle_front) = 0  and is_on_road(front)) ? true : false;
-		check_turn_left <- (length(vehicle_left) = 0  and (left.location overlaps road_belong.geom_display)) ? true : false;
-		check_turn_right <- (length(vehicle_right) = 0  and (right.location overlaps road_belong.geom_display)) ? true : false;
-		
-		if (name = "motorbike") {
-			check_turn_left2 <- (length(vehicle_left2) = 0 and (left2.location overlaps road_belong.geom_display)) ? true : false;
-			check_turn_right2 <- (length(vehicle_right2) = 0  and (right2.location overlaps road_belong.geom_display)) ? true : false;
-			check_back <- (length(vehicle_back) = 0  and (back.location overlaps road_belong.geom_display)) ? true : false;
-		}
-	}
-	
 	action update_polygon {
+		// polygons for vehicle
 		angle <- angle_between(start_node, start_node + {10,0}, target_node);
 		current <- polygon([location + {dy, -dx}, location + {dy, dx},
 						  location + {- dy, dx}, location + {-dy, -dx}]) rotated_by heading;
@@ -209,30 +146,15 @@ species vehicle skills:[moving] {
 	    float d <- distance_to(start_node, target_node);
 		float a <- (target_node - start_node).location.x;
 		float b <- (target_node - start_node).location.y;    	
-		point front_point;	
-						  
+		point front_point;		  
 		float size <- (speed/max_speed);
-//	    //ddy: dynamic dy of front polygon
-		float ddy <- minimun_polygon_size*dy + size*dy;
+	    //ddy: dynamic length dy of front polygon: length = [minimun_length_size + speed/max_speed] * length of vehicle
+		float ddy <- minimun_length_size*dy + size*dy;
 		
-//		float k1 <- (1.0 + minimun_polygon_size + size)*dy/d;
-//		float k2 <- - (1.0 + minimun_polygon_size + size)*dy/d;	
-//		float angle <- angle_between(start_node,start_node + {10,0}, target_node);
-//		point p1 <- location + {k1*a, k1*b};
-//		point p2 <- location + {k2*a, k2*b};
-//		// front location with front polygon of size (dx,dy)
-//		if ( abs(angle_between(location, location + {10,0}, p1) - angle) < 90 ) {
-//			front_point <- p1;
-//		} else {
-//			front_point <- p2;
-//		}
-		
-		float h <- (1.0 + minimun_polygon_size + size)*dy;
+		float h <- (1.0 + minimun_length_size + size)*dy;
 		float xx <- h*cos(angle);
 		float yy <- h*sin(angle);
 		front_point <- location + {xx, yy};
-		
-		
 		front <- polygon([front_point + {ddy, -dx}, front_point + {ddy, dx},
 						  front_point + {- ddy, dx}, front_point + {-ddy, -dx}]) rotated_by angle;			  
 		
@@ -240,38 +162,16 @@ species vehicle skills:[moving] {
 		// left location with left polygon of size (dx,dy)
 		point left_point <- front_point + {b*D/sqrt(a*a + b*b), - a*D/sqrt(a*a + b*b)};
 		
-		left <- polygon([left_point + {ddy, -polygon_width_size*dx}, left_point + {ddy, polygon_width_size*dx},
-						  left_point + {- ddy, polygon_width_size*dx}, left_point + {-ddy, -polygon_width_size*dx}]) rotated_by angle;
+		left <- polygon([left_point + {ddy, -width_size*dx}, left_point + {ddy, width_size*dx},
+						  left_point + {- ddy, width_size*dx}, left_point + {-ddy, -width_size*dx}]) rotated_by angle;
 		
 		// right location with right polygon of size (dx,dy)
 		point right_point <- front_point + { -b*D/sqrt(a*a + b*b), a*D/sqrt(a*a + b*b)};	
 			  
-		right <- polygon([right_point + {ddy, -polygon_width_size*dx}, right_point + {ddy, polygon_width_size*dx},
-						  right_point + {- ddy, polygon_width_size*dx}, right_point + {-ddy, -polygon_width_size*dx}]) rotated_by angle;
+		right <- polygon([right_point + {ddy, -width_size*dx}, right_point + {ddy, width_size*dx},
+						  right_point + {- ddy, width_size*dx}, right_point + {-ddy, -width_size*dx}]) rotated_by angle;
 						  
 		target <- front.location;
-		
-		// more geometry for motorbike
-		if (name = 'motorbike') {
-			float D2 <- 2.5*dx;
-			point left2_point <- front_point + {b*D2/sqrt(a*a + b*b), - a*D2/sqrt(a*a + b*b)};
-			left2 <- polygon([left2_point + {ddy, -polygon_width_size*dx}, left2_point + {ddy, polygon_width_size*dx},
-							  left2_point + {- ddy, polygon_width_size*dx}, left2_point + {-ddy, -polygon_width_size*dx}]) rotated_by angle;
-							  
-			point right2_point <- front_point + {-b*D2/sqrt(a*a + b*b), a*D2/sqrt(a*a + b*b)};	
-			right2 <- polygon([right2_point + {ddy, -polygon_width_size*dx}, right2_point + {ddy, polygon_width_size*dx},
-							  right2_point + {- ddy, polygon_width_size*dx}, right2_point + {-ddy, -polygon_width_size*dx}]) rotated_by angle;
-			
-			point back_point;
-			float my_angle <- angle_between(target_node, target_node + {10, 0}, start_node);
-			float h <- (1.0 + minimun_polygon_size + size)*dy;
-			float bxx <- h*cos(my_angle);
-			float byy <- h*sin(my_angle);
-			back_point <- location + {bxx, byy};
-			back <- polygon([back_point + {ddy, -dx}, back_point + {ddy, dx},
-						  back_point + {- ddy, dx}, back_point + {-ddy, -dx}]) rotated_by angle;	
-		}
-		
 	}
 	
 	action compute_shortest_path {
@@ -284,11 +184,11 @@ species vehicle skills:[moving] {
 		}  
 	}
 
-	action speed_up {
+	action accelerate {
 		speed <- min(max_speed, speed + acceleration_factor);
 	}
 	
-	action slow_down(vehicle vehicle_ahead) {
+	action decelerate(vehicle vehicle_ahead) {
 		speed <- max(0.0, speed - deceleration_factor);
 	}
 	
@@ -330,9 +230,7 @@ species vehicle skills:[moving] {
 		}
 		angle <- angle_between(start_node, start_node + {10,0}, target_node);
 		
-		if (target_node != nil) {
-//			target_space <- polyline([target_node - {1.5*road_width, 0}, target_node + {1.5*road_width, 0}]) rotated_by (angle + 90);
-			
+		if (target_node != nil) {		
 			point future_node;
 			point x1;
 			point x2;
@@ -359,10 +257,10 @@ species vehicle skills:[moving] {
 				
 				float k;
 				if (alpha = 180) {
-					target_space <- polyline([target_node - {1.5*road_width, 0}, target_node + {1.5*road_width, 0}]) rotated_by (angle + 90);
+					target_space <- polyline([target_node - {1.5*ROAD_WIDTH, 0}, target_node + {1.5*ROAD_WIDTH, 0}]) rotated_by (angle + 90);
 				} else {
 					if (alpha > 180) { alpha <- alpha - 180; if (alpha < 90) { alpha <- 180 - alpha; }}
-					float k <- road_width/sin(180 - alpha);
+					float k <- ROAD_WIDTH/sin(180 - alpha);
 					x2 <- target_node;
 					float a <- (start_node - target_node).x;
 					float b <- (start_node - target_node).y;
@@ -380,10 +278,9 @@ species vehicle skills:[moving] {
 					point newpoint <- x2*2 - x4;
 					target_space <- polyline([newpoint,x4]);
 				}
-			} else { target_space <- polyline([target_node - {1.5*road_width, 0}, target_node + {1.5*road_width, 0}]) rotated_by (angle + 90); }
+			} else { target_space <- polyline([target_node - {1.5*ROAD_WIDTH, 0}, target_node + {1.5*ROAD_WIDTH, 0}]) rotated_by (angle + 90); }
 			
 		}
-		
 	}
 	
 	road get_next_road {
@@ -402,44 +299,18 @@ species vehicle skills:[moving] {
 	
 	action control_oneway {
 		if (check_go_straight = true) {
-			do speed_up;
+			do accelerate;
 			target <- front.location;
 		} else if (check_turn_left = true) {
 			// turn teft
-			do speed_up;
+			do accelerate;
 			target <- left.location;
 		} else if (check_turn_right = true) and flip(prob_turn_right) {
-			do speed_up;
+			do accelerate;
 			target <- right.location;
 		} else {
 			target <- front.location;
-			do slow_down(first(vehicle_front));
-		}
-	}
-	
-	action control_oneway_ver2 {
-		if (check_go_straight = true) {
-			do speed_up;
-			target <- front.location;
-		} else if (check_turn_left = true) {
-			// turn teft
-			do speed_up;
-			target <- left.location;
-		} else if (check_turn_right = true) and flip(prob_turn_right) {
-			do speed_up;
-			target <- right.location;
-		} else if (check_turn_left2 = true) {
-			do speed_up;
-			target <- left2.location;
-		} else if (check_turn_right2 = true) {
-			do speed_up;
-			target <- right2.location;
-		} else if (check_back = true) and (count < 20) {
-			target <- back.location;
-		}
-		else {
-			target <- front.location;
-			do slow_down(first(vehicle_front));
+			do decelerate(first(vehicle_front));
 		}
 	}
 	
@@ -447,17 +318,15 @@ species vehicle skills:[moving] {
 		do get_side;
 		if (on_right_side = false) { // if on left side
 			if (check_turn_right = true) {
-				do speed_up;
+				do accelerate;
 				target <- right.location;
 			} else if (check_go_straight = true) {
-				do speed_up;
+				do accelerate;
 				target <- front.location;
 			} else if ((check_turn_left = true) and (first(vehicle_front) != nil) 
 			and first(vehicle_front).target_node = target_node) {
-//				do speed_up;
-//				target <- flip(prob) ? left.location : front.location;
 				if flip(prob_go_opposite) {
-					do speed_up;
+					do accelerate;
 					target <- left.location;
 				}
 			} else {
@@ -468,154 +337,49 @@ species vehicle skills:[moving] {
 		
 		else { // if on right side
 			if (check_go_straight = true) {
-				do speed_up;
+				do accelerate;
 				target <- front.location;
 			} else if (check_turn_left = true) and (check_right_side(left) = true) {
-				do speed_up;
+				do accelerate;
 				target <- left.location;
 			} else if (check_turn_right = true) and flip(prob_turn_right) {
-				do speed_up;
+				do accelerate;
 				target <- right.location;
 			} else if (check_turn_left = true) and (check_right_side(left) = false ) and flip(prob_go_opposite) {
-				do speed_up;
+				do accelerate;
 				target <- left.location;
 			} else {
 				target <- front.location;
-				do slow_down(first(vehicle_front));
+				do decelerate(first(vehicle_front));
 			}
 		}
 	}
 	
-	action control_twoway_ver2 {
-		do get_side;
-		if (on_right_side = false) { // if on left side
-			if (check_turn_right = true) {
-				do speed_up;
-				target <- right.location;
-			} else if (check_go_straight = true) {
-				do speed_up;
-				target <- front.location;
-			} else if ((check_turn_left = true) and (first(vehicle_front) != nil) 
-			and first(vehicle_front).target_node = target_node) and flip(prob_go_opposite) {
-				do speed_up;
-				target <- left.location;
-			} else {
-				target <- right.location;
-				speed <- max(speed - deceleration_factor, 0.02);
-			}
-		}
-		
-		else { // if on right side
-			if (check_go_straight = true) {
-				do speed_up;
-				target <- front.location;
-			} else if (check_turn_left = true) and ((check_right_side(left) = true) or (check_right_side(left) = false  and flip(prob_go_opposite))) {
-				do speed_up;
-				target <- left.location;
-			} else if (check_turn_right = true) {
-				do speed_up;
-				target <- right.location;
-			} else if (name = "motorbike") and (check_turn_left2 = true) and ((check_right_side(left2) = true) or (check_right_side(left2) = false and flip(prob_go_opposite))) {
-				do speed_up;
-				target <- left2.location;
-			} else if (name = "motorbike") and (check_turn_right2 = true) {
-				do speed_up;
-				target <- right2.location;
-			} else if (name = "motorbike") and (check_back = true)  and (count < 20) {
-				target <- back.location;
-			}
-			else {
-				target <- front.location;
-				do slow_down(first(vehicle_front));
-			}
-		}
-	}
-	
-//	bool check_valid_turn {
-//		point point1 <- target_node;
-//		point point2;
-//		int idx <- (road_belong_nodes index_of target_node);
-//		if (idx < length(road_belong_nodes) - 1) {
-//			point2  <- road_belong_nodes[idx + 1];
-//		} else {
-//			road my_road <- get_next_road();
-//			if (my_road != nil) {
-//				do die;
-//			} else {
-//				if (point1 = first(my_road.shape.points)) {
-//					point2 <- my_road.shape.points[1];
-//				} else if (point1 = last(my_road.shape.points)) {
-//					point2 <- reverse(my_road.shape.points)[1];
-//				}
-//			}
-//		}
-//		
-//		geometry front_space;
-//		
-//		angle <- angle_between(point1, point1 + {10,0}, point2);
-//		
-//	    float d <- distance_to(point1, point2);
-//		float a <- (point2 - point1).location.x;
-//		float b <- (point2 - point1).location.y;    
-//								  
-//		float size <- (speed/max_speed);
-//	    //ddy: dynamic dy of front polygon
-//		float ddy <- minimun_polygon_size*dy + size*dy;
-//		float k1 <- (1.0 + minimun_polygon_size + size)*dy/d;
-//		float k2 <- - (1.0 + minimun_polygon_size + size)*dy/d;
-//		
-//		point p1 <- location + {k1*a, k1*b};
-//		point p2 <- location + {k2*a, k2*b};
-//		point front_point;
-//		float angle <- angle_between(start_node,start_node + {10,0}, target_node);
-//		// front location with front polygon of size (dx,dy)
-//		if ( abs(angle_between(location, location + {10,0}, p1) - angle) < 90 ) {
-//			front_point <- p1;
-//		} else {
-//			front_point <- p2;
-//		}
-//		
-//		front_space <- polygon([front_point + {ddy, -dx}, front_point + {ddy, dx},
-//						  front_point + {- ddy, dx}, front_point + {-ddy, -dx}]) rotated_by angle;	
-//		bool value <- false;
-//		if check_right_side(front_space) {
-//			value <- true;
-//		}
-//		return value;
-//	}
-	
-	action follow_traffic_light {
-		if (road_belong.light_belong != nil) and (front overlaps road_belong.light_belong.my_geom) and (angle = road_belong.light_belong.direction_control) {
-			if (road_belong.light_belong.is_yellow = true) {
-				float t <- (road_belong.light_belong.counter - green_time)/yellow_time;
-				if (t < 0.5) or flip(1 - prob_pass_light) {
-					speed <- 0;
-				}
-			} else if (road_belong.light_belong.is_yellow = false) and (road_belong.light_belong.is_green = false){
+	// this action is for the intersection
+	action observe_traffic_light {
+		if ((road_belong.light_belong != nil) and (front overlaps road_belong.light_belong.my_geom) and (angle = road_belong.light_belong.direction_control)) {
+			if (road_belong.light_belong.is_green = false) {
 				speed <- 0;
-			} 
-//			else {
-//				do speed_up;
-//			}
-		}
+			}
+ 		}
 	}
 	
 	action control_at_intersection {
 		list<list<int>> check_list <- [[270,0], [90,180], [180,270], [0,90]];
-		list<vehicle> vehicle_intersection <- (vehicle at_distance(road_width) where (([angle, each.angle] in check_list) and (each.front overlaps front)));
+		list<vehicle> vehicle_intersection <- (vehicle at_distance(distance_check) where (([angle, each.angle] in check_list) and (each.front overlaps front)));
 		check_go_straight <- (length(vehicle_intersection) > 0) ? false : check_go_straight;
 		
 		if (check_go_straight = true) {
-			do speed_up;
+			do accelerate;
 			target <- front.location;
 		} else if (check_turn_left = true) and (check_right_side(left) = true) {
-			do speed_up;
+			do accelerate;
 			target <- left.location;
 		} else if (check_turn_right = true) and flip(prob_turn_right) {
-			do speed_up;
+			do accelerate;
 			target <- right.location;
 		} else if (check_turn_left = true) and (check_right_side(left) = false ) and flip(prob_go_opposite) {
-			do speed_up;
+			do accelerate;
 			target <- left.location;
 		} else {
 			target <- front.location;
@@ -627,13 +391,37 @@ species vehicle skills:[moving] {
 		}
 	}
 	
-	// different moving skill
-	reflex move  {
-		timer <- timer + 1;
-		count <- count + 1;
-		do get_vehicle;
+	action check_direction {
+		check_go_straight <- (length(vehicle_front) = 0  and is_on_road(front)) ? true : false;
+		check_turn_left <- (length(vehicle_left) = 0  and (left.location overlaps road_belong.geom_display)) ? true : false;
+		check_turn_right <- (length(vehicle_right) = 0  and (right.location overlaps road_belong.geom_display)) ? true : false;
+	}
+	action detect_obstacle {
+		vehicle_front <- (vehicle at_distance(distance_check)) where (each.current overlaps self.front);
+		vehicle_left <- (vehicle at_distance(distance_check)) where (each.current overlaps self.left);
+		vehicle_right <- (vehicle at_distance(distance_check)) where (each.current overlaps self.right);
+	}
+	
+	action observe_obstacle {
+		do detect_obstacle;
 		do check_direction;
+	}
+	
+	action define_new_target {
+		if road_belong.is_twoway = true {
+			if distance_to(location, {100, 100}) < distance_check {
+				do control_at_intersection;
+			} else {
+				do control_twoway;
+			}
+			
+		} else {
+			do control_oneway;
+		}
 		
+	}
+	
+	action check_change_road {
 //		if (distance_to(location, target_node) <= distance_check) {
 //		if (current overlaps target_space) {
 //			do change_node;
@@ -663,21 +451,23 @@ species vehicle skills:[moving] {
 				do check_direction;
 			}
 		}
+	}
+	
+	// moving skill
+	reflex move  {
+		timer <- timer + 1;
+		// in study case of Giai Phong road, vehicles must decrease their speed at the end of the road 
+		// due to the high density of traffic there
 		
-		if road_belong.is_twoway = true {
-			if distance_to(location, {100, 100}) < distance_check {
-				do control_at_intersection;
-			} else {
-				//do control_twoway;
-				do control_twoway_ver2;
-			}
-			
-		} else {
-			do control_oneway;
-//			do control_oneway_ver2;
+		if ((distance_to(location, target_node) <= 5) and (model_name = 'study_case')) {
+			max_speed <- 2.0 + rnd(2.0);
+			speed <- max_speed;
 		}
 		
-		do follow_traffic_light;
+		do check_change_road;
+		do observe_obstacle;
+		do define_new_target;
+		do observe_traffic_light;
 		do goto target: target speed:speed;
 		do update_polygon;
 	}
@@ -688,19 +478,16 @@ species vehicle skills:[moving] {
 			draw front color: #red;
 			draw left color: #blue;
 			draw right color: #blue;
-			draw target_space color:#red;
+//			draw target_space color:#red;
 //			draw free_space color:#red;
-			draw left2 color:#red;
-			draw right2 color:#red;
-			draw back color: #blue;
 		}
 		
-		if (name = 'CAR') {
-			draw images[0] size: {length, width} rotate:heading;
-		} else if (name = 'MOTORBIKE') {
-			draw images[1] size: {length, width} rotate:heading;
-		} else if (name = 'BUS'){
-			draw images[2] size: {length, width} rotate:heading;
+		if (type = 'CAR') {
+			draw IMAGES[0] size: {length, width} rotate:heading;
+		} else if (type = 'MOTORBIKE') {
+			draw IMAGES[1] size: {length, width} rotate:heading;
+		} else if (type = 'BUS'){
+			draw IMAGES[2] size: {length, width} rotate:heading;
 		}
 	}
 }
@@ -711,8 +498,9 @@ species block_space {
 	}
 }
 
-species free_myspace {
+species init_space {
 	geometry geom;
+	point my_point;
 	aspect base {
 		draw geom color: #blue border:#black;
 	}
