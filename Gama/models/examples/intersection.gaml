@@ -1,317 +1,263 @@
 /***
 * Name: intersection
 * Author: dang tu
-* Description: traffic simulation with different directions
+* Description: 
 * Tags: Tag1, Tag2, TagN
 ***/
 
-model intersection2
-
+model intersection
+import "../vehicle.gaml"
+import "../global_variables.gaml"
 /* Insert your model definition here */
 
-global {   
-	graph my_graph <- graph([]);
-	list<image_file> images <- [image_file("../includes/car.png"), image_file("../includes/motorbike.png")];
-	int nb_vehicle <- 10;
-	
+global {
+	geometry shape <- square(500);
+	float step <- 0.05#s;
+	int nb_vehicles;
+	int traffic_volume <- 2;
+	int road_width <- ROAD_WIDTH;
 	init {
-
-		list<point> nodes <- [{0,0}, {50,0}, {100,0}, {50,50}, {50,100}];
-//		map<point, point> edges <- [{50,100}::{50,50}, {50,50}::{0,0}, {50,50}::{50,0}, {50,50}::{100,0}];
-		loop node over:nodes {
-			my_graph <- my_graph add_node node.location;
-		}
-		
-		my_graph <- my_graph add_edge (nodes at 4::nodes at 3);
-		my_graph <- my_graph add_edge (nodes at 3::nodes at 0);
-		my_graph <- my_graph add_edge (nodes at 3::nodes at 1);
-		my_graph <- my_graph add_edge (nodes at 3::nodes at 2);
-		
-		loop vertex over:nodes {
-			create roadNode {
-				location <- vertex;
-				if (location = {50,50}) {
-//					shape <- polygon([{47,43}, {53,43}, {53, 51}, {47,51}]); 
-					shape <- rectangle(6,1);
-					is_traffic_signal <- true;
-				}
+		list<list<point>> my_nodes <- [[{100,50}, {100,100}], [{100,100}, {100,150}], [{50,100}, {100,100}], [{100,100}, {150,100}]];
+		loop nodes over:my_nodes {
+			create road {
+				shape <- polyline(nodes);
+				road_width <- ROAD_WIDTH;
+				geom_display <- (shape + road_width);
+				is_twoway <- true;
 			}
 		}
 		
-		create road {
-			shape <- polyline(reverse([{50,100}, {50,50}]));
-			geom_display <- (shape + 3);
+		create traffic_light {
+			location <- {100, 99 - road_width};
+			shape <- circle(1);
+			counter <- 0;
+			is_green <- false;
+			t_g <- GREEN_TIME;
+			t_y <- YELLOW_TIME;
+			t_r <- RED_TIME;
+			direction_control <- 90;
+			my_geom <- polyline([location, location + {-road_width, 0}]);
 		}
-		create road {
-			shape <- polyline(reverse([{50,50}, {0,0}]));
-			geom_display <- (shape + 3);
+		
+		create traffic_light {
+			location <- {100, 101 + road_width};
+			shape <- circle(1);
+			counter <- 0;
+			is_green <- false;
+			t_g <- GREEN_TIME;
+			t_y <- YELLOW_TIME;
+			t_r <- RED_TIME;
+			direction_control <- 270;
+			my_geom <- polyline([location, location + {road_width, 0}]);
 		}
-		create road {
-			shape <- polyline(reverse([{50,50}, {50,0}]));
-			geom_display <- (shape + 3);
+		
+		create traffic_light {
+			location <- {99 - road_width, 100};
+			shape <- circle(1);
+			counter <- RED_TIME;
+			t_g <- GREEN_TIME;
+			t_y <- YELLOW_TIME;
+			t_r <- RED_TIME;
+			is_green <- true;
+			direction_control <- 0;
+			my_geom <- polyline([location, location + {0, road_width}]);
 		}
-		create road {
-			shape <- polyline(reverse([{50,50}, {100,0}]));
-			geom_display <- (shape + 3);
+		
+		create traffic_light {
+			location <- {101 + road_width, 100};
+			shape <- circle(1);
+			counter <- RED_TIME;
+			t_g <- GREEN_TIME;
+			t_y <- YELLOW_TIME;
+			t_r <- RED_TIME;
+			is_green <- true;
+			direction_control <- 180;
+			my_geom <- polyline([location, location + {0, -road_width}]);
+		}
+		
+		loop i from: 0 to:3 {
+			road(i).light_belong <- traffic_light(i);
+		}
+		
+		road_network <- as_edge_graph(road);
+		write road_network;
+		
+		create block_space {
+			location <- {100, 100};
+			shape <- circle(2);
+		}
+		
+		// ----------------------
+		create init_space {
+			location <- {100,50} + {-road_width/2, 2};
+			my_point <- {100,50};
+			geom <- rectangle(road_width, 2);
+		}
+		
+		create init_space {
+			location <- {100,150} + {road_width/2, -2};
+			my_point <- {100,150};
+			geom <- rectangle(road_width, 2);
+		}
+		
+		create init_space {
+			location <- {50,100} + {2,road_width/2};
+			my_point <- {50,100};
+			geom <- rectangle(road_width, 2) rotated_by 90;
+		}
+		
+		create init_space {
+			location <- {150,100} + {-2,-road_width/2};
+			my_point <- {150,100};
+			geom <- rectangle(road_width, 2) rotated_by 90;
 		}
 	}
 	
-	reflex produce_traffic {
-		geometry space <- polygon([{47,94}, {53,94}, {53,100}, {47,100}]);
-		list<vehicle> vehicle_ovelap <- vehicle where (each overlaps space);
-		if (length(vehicle_ovelap) = 0) {
-			create vehicle number: nb_vehicle {
-				name <- flip(0.2) ? 'car' : 'motorbike';
-				if name = 'car' {
-					length <- 3.8 #m;
-					width <- 1.5 #m;
-					df <- 0.25 #m;
-					db <- 0.15 #m;
+	reflex init_traffic when:mod(cycle,20)=0 {
+		list<point> targets <- [];
+		loop i from:0 to:3 {
+			if length(agents_overlapping(init_space(i).geom)) = 2 {
+				targets <+ init_space(i).my_point;
+			}
+		}
+//		write length(targets);
+		
+		if length(targets) > 1 {
+			create vehicle number: traffic_volume {
+				type <- flip(CAR_PERCENT) ? 'CAR' : 'MOTORBIKE';
+				if type = 'CAR' {
+					length <- CAR_LENGTH;
+					width <- CAR_WIDTH;
+					df <- CAR_DF;
+					db <- CAR_DB;
 					dx <- width/2 + db;
 					dy <- length/2 + df;
-					speed <- 0.1;
-					max_speed <- rnd(0.4, 1.0) #m/#s;
+					max_speed <- CAR_MAXSPEED;
 				} else {
-					length <- 1.8 #m;
-					width <- 0.7 #m;
-					df <- 0.15 #m;
-					db <- 0.1 #m;
+					length <- MOTORBIKE_LENGTH;
+					width <- MOTORBIKE_WIDTH;
+					df <- MOTORBIKE_DF;
+					db <- MOTORBIKE_DB;
 					dx <- width/2 + db;
 					dy <- length/2 + df;
-					speed <- 0.1;
-					max_speed <- rnd(0.2, 0.7) #m/#s;
+					max_speed <- MOTORBIKE_MAXSPEED;
 				}
 				
-				source_node <- my_graph.vertices[4];
-				final_node <- one_of([my_graph.vertices[0], my_graph.vertices[1], my_graph.vertices[2]]);
+				speed <- INIT_SPEED;
+				width_size <- WIDTH_SIZE;
+				minimun_length_size <- MINIMUM_LENGTH_SIZE;
+				distance_check <- DISTANCE_CHECHK;
+				acceleration_factor <- ACCELERATION_FACTOR;
+				deceleration_factor <- DECELERATION_FACTOR;
+				speed <- INIT_SPEED;
+				prob_go_opposite <- PROB_GO_OPPOSITE;
+				prob_turn_right <- PROB_TURN_RIGHT;
+				
+				display_polygon <- false;
+				source_node <- one_of(targets);
+				final_node <-  one_of(targets where (each != source_node));
 				do compute_shortest_path;
-				next_node <- shortest_path[1];
-				current_node <- source_node;
-				location <- any_location_in(space);
-			}
-		}
-	}
-	
-}
-
-species roadNode skills: [skill_road_node] {
-	bool is_traffic_signal;
-	
-	aspect geom3D {
-		if (is_traffic_signal) {
-			draw shape at:location color: #green;
-		}
-	}
-}
-
-species road skills: [skill_road] { 
-	string oneway;
-	geometry geom_display;
-	int id;
-	aspect geom {    
-		draw geom_display border: #grey  color: #white ;
-	}  
-}
-
-species vehicle skills:[moving] {
-	string name;
-	float length;
-	float width;
-	float max_speed;
-	float df;
-	float db;
-	float dx;
-	float dy;
-	
-	point final_node;
-	point next_node;
-	point current_node;
-	point source_node;
-	point target;
-	list<point> shortest_path;
-	
-	geometry current;
-	geometry front;
-	geometry left;
-	geometry right;
-	
-	list<vehicle> get_vehicle_conflict_front {
-		list<vehicle> vehicle_conflict_front <- (vehicle at_distance(10 + dy)) where (each.current overlaps self.front);
-		return vehicle_conflict_front;
-	}
-	
-	list<vehicle> get_vehicle_conflict_left {
-		list<vehicle> vehicle_conflict_left <- (vehicle at_distance(10 + dy)) where (each.current overlaps self.left);
-		return vehicle_conflict_left;
-	}
-	
-	list<vehicle> get_vehicle_conflict_right {
-		list<vehicle> vehicle_conflict_right <- (vehicle at_distance(10 + dy)) where (each.current overlaps self.right);
-		return vehicle_conflict_right;
-	}
-	
-	bool check_go_straight {
-		list<vehicle> vehicle_conflict_front <- get_vehicle_conflict_front();
-//		bool is_on_road <- false;
-//		ask road {
-//			if (myself.front.location overlaps self.geom_display){
-//				is_on_road <- true;
-//			}
-//		}
-//		return (length(vehicle_conflict_front) = 0  and is_on_road) ? true : false;
-		return (length(vehicle_conflict_front) = 0) ? true : false;
-	}
-	
-	bool check_turn_left {
-		list<vehicle> vehicle_conflict_left <- get_vehicle_conflict_left();
-		bool is_on_road <- false;
-		ask road {
-			if (myself.left.location overlaps self.geom_display){
-				is_on_road <- true;
-			}
-		}
-		return ((length(vehicle_conflict_left) = 0) and is_on_road) ? true : false;
-	}
-	
-	bool check_turn_right {
-		list<vehicle> vehicle_conflict_right <- get_vehicle_conflict_right();
-		bool is_on_road <- false;
-		ask road {
-			if (myself.right.location overlaps self.geom_display){
-				is_on_road <- true;
-			}
-		}
-		return ((length(vehicle_conflict_right) = 0) and is_on_road) ? true : false;
-	}
-	
-	action update_polygon {
-		current <- polygon([location + {dy, -dx}, location + {dy, dx},
-						  location + {- dy, dx}, location + {-dy, -dx}]) rotated_by heading;
-	    						  
-		float d <- distance_to(current_node, next_node);
-		float a <- (next_node - current_node).location.x;
-		float b <- (next_node - current_node).location.y;
-		float k1 <- 2*dy/d;
-		float k2 <- - 2*dy/d;
-		point p1 <- location + {k1*a, k1*b};
-		point p2 <- location + {k2*a, k2*b};
-		point front_point;
-		float angle <- angle_between(current_node,current_node + {10,0}, next_node);
-		if ( angle_between(location, location + {10,0}, p1) = angle ) {
-			front_point <- p1;
-		} else {
-			front_point <- p2;
-		}
-		front <- polygon([front_point + {dy, -dx}, front_point + {dy, dx},
-						  front_point + {- dy, dx}, front_point + {-dy, -dx}]) rotated_by angle;
-						  
-		
-		float D <- 2*dx;
-		point left_point <- front_point + {b*D/sqrt(a*a + b*b), - a*D/sqrt(a*a + b*b)};	  
-		left <- polygon([left_point + {dy, -dx}, left_point + {dy, dx},
-						  left_point + {- dy, dx}, left_point + {-dy, -dx}]) rotated_by angle;
-		
-		point right_point <- front_point + { -b*D/sqrt(a*a + b*b), a*D/sqrt(a*a + b*b)};				  
-		right <- polygon([right_point + {dy, -dx}, right_point + {dy, dx},
-						  right_point + {- dy, dx}, right_point + {-dy, -dx}]) rotated_by angle;
-						  
-		target <- front.location;
-	}
-	
-	action compute_shortest_path {
-   		path my_path <- path_between(my_graph, source_node, final_node);
-        list my_path <- string(my_path) split_with('::[]()as path');
-       
-    	loop p over:my_path {
-    		list a <- string(p) split_with('{}');
-    		shortest_path <+ point('{' + a[0] + '}');
-    	}
-	}
-
-	action speed_up {
-		speed <- min(1.0, speed + 0.05);
-	}
-	
-	action slow_down(vehicle vehicle_ahead) {
-		speed <- max(0, speed - 0.4);
-	}
-	
-	reflex move when:target != nil {
-		if (distance_to(location, next_node) < 6) {
-			// when vehicle reaches final destination, do die
-			if (next_node = final_node) {
-				do die;
-			}
-			
-			// assign new next_node, current_node when vehicle reaches a node which is not the final destination
-			roadNode node;
-			ask roadNode {
-				if (distance_to(myself.next_node, self.location) < 1) {
-					node <- self;
-				}   
-			}
-			if ((location overlaps node.shape) and (node.is_traffic_signal = true)) {
-				int index <- (shortest_path index_of next_node);
-				if (index < length(shortest_path) - 1) {
-					current_node <- next_node;
-					next_node <- shortest_path[index + 1];
+				if length(shortest_path) = 0 { do die; }
+				road_belong <-  shortest_path[0];
+				start_node <- source_node;
+				do compute_road_belong_nodes;
+				target_node <- road_belong_nodes[1];
+				angle <- angle_between(start_node, start_node + {10,0}, target_node);
+				
+				// location
+				point p1 <- start_node;
+				float a <- (target_node - start_node).x;
+				float b <- (target_node - start_node).y;
+				float d <- distance_to(target_node, start_node);
+				point p1 <- start_node;
+				point p2 <- p1 + {road_width*a/d, road_width*b/d};
+				
+				point center <- (p1 + p2)/2;
+				float D <- 0.5*road_width;
+				point free_space_center <- center + {b*D/sqrt(a*a + b*b), - a*D/sqrt(a*a + b*b)};
+				if angle_between(start_node, target_node, free_space_center) > 180 {
+					free_space_center <- center + { -b*D/sqrt(a*a + b*b), a*D/sqrt(a*a + b*b)};	
+				}	
+				point p3 <- free_space_center*2 - p1;
+				point p4 <- free_space_center*2 - p2;
+				free_space <- polygon([p1,p2,p3,p4, p1]);
+				location <- any_location_in(free_space);
+				do update_polygon;
+							
+				point future_node;
+				point x1;
+				point x2;
+				point x3;
+				point x4; 
+				// x1, x2, x3, x4 form a parallelogram
+				int my_idx <- (road_belong_nodes index_of target_node);
+				if (my_idx < length(road_belong_nodes) - 1) {
+					future_node <- road_belong_nodes[my_idx + 1];
 				} else {
-					next_node <- nil;
-					do die;
+					road my_feature_road <- get_next_road();
+					if (my_feature_road != nil) {
+						if (target_node = first(my_feature_road.shape.points)) {
+							future_node <- my_feature_road.shape.points[1];
+						} else if (target_node = last(my_feature_road.shape.points)) {
+							future_node <- reverse(my_feature_road.shape.points)[1];
+						}
+					}
 				}
+				
+	//			write future_node;
+				if (future_node != nil)  {
+					float alpha <- angle_between(target_node, start_node, future_node);
+					float k;
+	//				write alpha;
+					if (alpha = 180) {
+						target_space <- polyline([target_node - {1.5*road_width, 0}, target_node + {1.5*road_width, 0}]) rotated_by (angle + 90);
+					} else {
+						if (alpha > 180) { alpha <- alpha - 180; if (alpha < 90) { alpha <- 180 - alpha; }}
+						float k <- road_width/sin(180 - alpha);
+						x2 <- target_node;
+						float a <- (start_node - target_node).x;
+						float b <- (start_node - target_node).y;
+						float d <- distance_to(target_node, start_node);
+						point x1 <- x2 + {k*a/d, k*b/d};
+						
+						float A <- (future_node - target_node).x;
+						float B <- (future_node - target_node).y;
+						float D <- distance_to(future_node, target_node);
+						point x3 <- x2 + {k*A/D, k*B/D};
+						
+						point center <- (x1 + x3)/2;
+						point x4 <- center*2 - x2;
+						point x4 <- center*2 - x2;
+						point newpoint <- x2*2 - x4;
+						target_space <- polyline([newpoint,x4]);
+					}
+				} else { target_space <- polyline([target_node - {1.5*road_width, 0}, target_node + {1.5*road_width, 0}]) rotated_by (angle + 90); }
 			}
 		}
 		
-		list<vehicle> vehicle_conflict_front <- get_vehicle_conflict_front();
-		list<vehicle> vehicle_conflict_left <- get_vehicle_conflict_left();
-		list<vehicle> vehicle_conflict_right <- get_vehicle_conflict_right();
-		
-		if (speed > max_speed) {
-			speed <- max_speed;
-		}
-
-		if (check_go_straight() = true) {
-			do speed_up;
-			target <- front.location;
-		} else if (check_turn_left() = true) {
-			do speed_up;
-			target <- left.location;
-		} else if (check_turn_right() = true) {
-			do speed_up;
-			target <- right.location;
-		} else {
-			target <- front.location;
-			do slow_down(first(get_vehicle_conflict_front()));
-		}
-		do goto target: target speed:speed;
-	}
-	
-	reflex update_line {
-		do update_polygon;
-	}
-	
-	aspect base {
-		draw current color: #yellow;
-		draw front color: #red;
-		draw left color: #blue;
-		draw right color: #blue;
-		if (name = 'car') {
-			draw images[0] size: {length, width} rotate:heading;
-		}
-		
-		if (name = 'motorbike') {
-			draw images[1] size: {length, width} rotate:heading;
-		}
+		nb_vehicles <- length(vehicle);
 	}
 }
 
-experiment traffic_simulation {
-	float minimum_cycle_duration <- 0.05;
+
+
+experiment my_experiment {
+	float minimum_cycle_duration <- TIME_STEP;
 	output {
-		display city_display {
-			species road aspect: geom;
-			species roadNode aspect: geom3D;
+		display my_display background: #grey{
+			species road aspect: base;
+			species traffic_light aspect: base;
+//			species free_myspace aspect: base;
+//			species block_space aspect: base;
 			species vehicle aspect: base;
 		}
+		
+		display my_chart refresh:every(200#cycle) {
+			chart "Number of vehicles" position: {0, 0.5} size: {1.0,0.5}  {
+				data "Vehicle" value:nb_vehicles color:#green;
+			}
+		}
+		monitor "No. vehicles" value: nb_vehicles;
+		//monitor "Traffic volumne" value: traffic_volume;
 	}
 }
