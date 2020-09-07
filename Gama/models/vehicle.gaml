@@ -484,6 +484,7 @@ species vehicle skills:[moving] {
 		
 		if (type = 'CAR') {
 			draw IMAGES[0] size: {length, width} rotate:heading;
+//			draw circle(0.5) color:#red at: location + {length/2,0};
 		} else if (type = 'MOTORBIKE') {
 			draw IMAGES[1] size: {length, width} rotate:heading;
 		} else if (type = 'BUS'){

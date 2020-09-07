@@ -17,13 +17,17 @@ global {
 	geometry shape <- square(EVIRONMENT_SIZE);
 	float step <- STEP;
 	int unit <- 20;
-	int traffic_volume <- 5; 
-//	float PROB_GO_OPPOSITE <- 1.0;
+	int traffic_volume_bottom <- 5; 
+	int traffic_volume_top <- 5; 
+	float PROB_GO_OPPOSITE <- 1.0;
 	
 	int nb_vehicle;
 	float vehicle_average_speed <- 0.0;
 	float vehicle_timer <- 0.0;
 	int vehicle_counter <- 0;
+	
+	int nb_top; // number of vehicle at the top lane but move on bottom lane
+	int nb_bottom; // number of vehicle at the bottom lane but move on top lane
 	
 	init {
 		create road {
@@ -36,7 +40,7 @@ global {
 	}
 	
 	reflex init_traffic when: mod(cycle, unit) = 0 {
-		create vehicle number: 5 {
+		create vehicle number: traffic_volume_bottom {
 				type <- flip(CAR_PERCENT) ? 'CAR' : 'MOTORBIKE';
 				if type = 'CAR' {
 					length <- CAR_LENGTH;
@@ -68,6 +72,7 @@ global {
 				display_polygon <- false;
 				source_node <- nodes[0];
 				final_node <-  nodes[1];
+				on_right_side <- true;
 				do compute_shortest_path;
 				if length(shortest_path) = 0 { do die; }
 				road_belong <-  shortest_path[0];
@@ -146,7 +151,7 @@ global {
 				} else { target_space <- polyline([target_node - {1.5*ROAD_WIDTH, 0}, target_node + {1.5*ROAD_WIDTH, 0}]) rotated_by (angle + 90); }
 			}
 			
-			create vehicle number: 2 {
+			create vehicle number: traffic_volume_top {
 				type <- flip(CAR_PERCENT) ? 'CAR' : 'MOTORBIKE';
 				if type = 'CAR' {
 					length <- CAR_LENGTH;
@@ -178,6 +183,7 @@ global {
 				display_polygon <- false;
 				source_node <- nodes[1];
 				final_node <-  nodes[0];
+				on_right_side <- true;
 				do compute_shortest_path;
 				if length(shortest_path) = 0 { do die; }
 				road_belong <-  shortest_path[0];
@@ -256,6 +262,14 @@ global {
 				} else { target_space <- polyline([target_node - {1.5*ROAD_WIDTH, 0}, target_node + {1.5*ROAD_WIDTH, 0}]) rotated_by (angle + 90); }
 			}
 	}
+	
+	reflex count_vehicles {
+		nb_top <- length(vehicle where (each.source_node = nodes[1] and each.on_right_side = false));
+		nb_bottom <- length(vehicle where (each.source_node = nodes[0] and each.on_right_side = false));
+		if nb_bottom + nb_top >= 5 {
+			do pause;
+		}
+	}
 }
 
 species my_species {
@@ -271,6 +285,10 @@ experiment my_experiment {
 			species road aspect: base;
 			species vehicle aspect: base;
 		}
+		monitor "Upper lane flow" value: 5;
+		monitor "Lower lane flow" value: 1;
+		monitor "Number of wrong vehicles on upper lane" value: 1;
+		monitor "Number of wrong vehicles on lower lane" value: 12;
 //		monitor "P" value: PROB_GO_OPPOSITE;
 	}
 }
