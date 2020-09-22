@@ -6,7 +6,7 @@
 ***/
 
 model test2
-import "../vehicle3.gaml"
+import "../vehicle4.gaml"
 import "../global_variables.gaml"
 
 /* Insert your model definition here */
@@ -27,7 +27,7 @@ global {
 		
 		road_network <- as_edge_graph(road);
 		
-		create vehicle number: 1 {
+		create vehicle number: 30 {
 			type <- 'CAR';
 			length <- CAR_LENGTH;
 			width <- CAR_WIDTH;
@@ -50,10 +50,10 @@ global {
 			
 //			source_node <- road_network.vertices[0];
 //			final_node <- road_network.vertices[10];
-//			source_node <- one_of(road_network.vertices);
-//			final_node <- one_of(road_network.vertices);
-			source_node <- {322.0999999999767, 665.781154679833};
-			final_node <- {452.0999999999767, 55.981154679786414};
+			source_node <- one_of(road_network.vertices);
+			final_node <- one_of(road_network.vertices);
+//			source_node <- {35.300000000046566, 813.1811546799727};
+//			final_node <- {452.0999999999767, 55.981154679786414};
 			
 			do compute_shortest_path;
 			if length(shortest_path) = 0 { do die; }
