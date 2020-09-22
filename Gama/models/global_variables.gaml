@@ -13,7 +13,7 @@ global {
 	// global variables
 	float STEP <- 0.05#s;
 	float EVIRONMENT_SIZE <- 300.0;
-	list<image_file> IMAGES <- [image_file("../../includes/car.png"), image_file("../../includes/motorbike2.png"), image_file("../../includes/bus.jpg")];
+	list<image_file> IMAGES <- [image_file("../../includes/car.png"), image_file("../../includes/motorbike.png"), image_file("../../includes/bus.jpg")];
 	
 	// attributes of road
 	float ROAD_WIDTH <- 8.0;
