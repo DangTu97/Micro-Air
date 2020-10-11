@@ -40,7 +40,7 @@ global {
 	float CAR_MAXSPEED <- 14 #m/#s;
 	
 	// MOTORBIKE
-	float MOTORBIKE_LENGTH <- 1.9 #m;
+	float MOTORBIKE_LENGTH <- 2.0 #m;
 	float MOTORBIKE_WIDTH <- 0.7 #m;
 	float MOTORBIKE_DF <- 0.1 #m;  
 	float MOTORBIKE_DB <- 0.05 #m; 
@@ -53,7 +53,7 @@ global {
 	float BUS_MAXSPEED <- 16.6 #m/#s;
 	
 	float INIT_SPEED <- 8 #m/#s;
-	float PROB_GO_OPPOSITE <- 0.0;
+	float PROB_GO_OPPOSITE <- 1.0;
 	float PROB_TURN_RIGHT <- 1.0;
 	float TIME_STEP <- 0.05 #s;
 	

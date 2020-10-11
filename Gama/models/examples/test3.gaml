@@ -51,7 +51,7 @@ global {
 			speed <- INIT_SPEED;
 			prob_go_opposite <- PROB_GO_OPPOSITE;
 			prob_turn_right <- PROB_TURN_RIGHT;
-			display_polygon <- true;
+			display_polygon <- false;
 			source_node <- {20,60};
 			final_node <- {140,20};
 			
@@ -99,7 +99,7 @@ global {
 			speed <- INIT_SPEED;
 			prob_go_opposite <- PROB_GO_OPPOSITE;
 			prob_turn_right <- PROB_TURN_RIGHT;
-			display_polygon <- true;
+			display_polygon <- false;
 			source_node <- {140,20};
 			final_node <- {20,60};
 			

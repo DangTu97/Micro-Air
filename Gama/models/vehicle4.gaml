@@ -395,23 +395,15 @@ species vehicle skills:[moving] {
 	
 	action check_direction {
 		check_go_straight <- (length(vehicle_front) = 0  and is_on_road(front)) ? true : false;
-//		check_go_straight <- (length(vehicle_front) = 0  and check_is_on_road(front)) ? true : false;
-		
 		check_turn_left <- (length(vehicle_left) = 0  and (left.location overlaps road_belong.geom_display)) ? true : false;
 		check_turn_right <- (length(vehicle_right) = 0  and (right.location overlaps road_belong.geom_display)) ? true : false;
-		
 		check_go_back <- (length(vehicle_back) = 0  and is_on_road(back)) ? true : false;
-
-//		check_go_straight <- (length(vehicle_front) = 0  and (front overlaps road_belong.geom_display)) ? true : false;
-//		check_turn_left <- (length(vehicle_left) = 0  and (left overlaps road_belong.geom_display)) ? true : false;
-//		check_turn_right <- (length(vehicle_right) = 0  and (right overlaps road_belong.geom_display)) ? true : false;
 	}
 	
 	action detect_obstacle {
 		vehicle_front <- (vehicle at_distance(distance_check)) where (each.current overlaps self.front);
 		vehicle_left <- (vehicle at_distance(distance_check)) where (each.current overlaps self.left);
 		vehicle_right <- (vehicle at_distance(distance_check)) where (each.current overlaps self.right);
-		
 		vehicle_back <- (vehicle at_distance(distance_check)) where (each.current overlaps self.back);
 	}
 	
@@ -424,13 +416,17 @@ species vehicle skills:[moving] {
 		if (future_node != nil) {
 			float alpha <- angle_between(start_node, target_node, future_node);
 			float beta <- angle_between(target_node, start_node, future_node);
-			if (alpha < 180) {
+			
+			if (alpha = 0) {
+				transfer_geom <- polyline([target_node - {ROAD_WIDTH, 0}, target_node, target_node + {ROAD_WIDTH, 0}]) rotated_by (angle + 90);
+			}
+			else if (alpha < 180) {
 				//ver 1
 				point x1;
 				point x2;
 				point x3;
 				point x4; 
-				
+	
 				float k <- ROAD_WIDTH/sin(180 - beta);
 				x2 <- target_node;
 				float a <- (start_node - target_node).x;
@@ -456,13 +452,20 @@ species vehicle skills:[moving] {
 						
 				point x6 <- x5 + x5 - newpoint;
 				transfer_geom <- polyline([newpoint, x5, x6]);
+
+				//transfer line for short segment
+				if distance_to(start_node, target_node) < distance_to(x5, target_node) {
+					transfer_geom <- polyline([target_node - {ROAD_WIDTH,0}, target_node, target_node + {ROAD_WIDTH,0}]) rotated_by 
+					(angle+90);
+				}
+				
 			} else if (alpha > 180) {
 				float a <- (target_node - start_node).location.x;
 				float b <- (target_node - start_node).location.y;    	
 				point x1 <- target_node + { -b*ROAD_WIDTH/sqrt(a*a + b*b), a*ROAD_WIDTH/sqrt(a*a + b*b)};
 				point x2 <- target_node + target_node - x1;
 				transfer_geom <- polyline([x1, target_node,x2]);
-			}	 
+			}
 		} else {
 			float a <- (target_node - start_node).location.x;
 			float b <- (target_node - start_node).location.y;    	
@@ -472,12 +475,111 @@ species vehicle skills:[moving] {
 		}
 	}
 	
+	action define_new_segment_ver1 {
+		if (check_current_segment() = false) {
+			if (location overlaps road_belong.geom_display) {
+				int index <- (road_belong_nodes index_of start_node);
+				loop i from:index to:length(road_belong_nodes) - 2 {
+					point s <- road_belong_nodes[i];
+					point t <- road_belong_nodes[i+1];
+					geometry l1 <- polyline([location - {ROAD_WIDTH,0}, location, location + {ROAD_WIDTH,0}]) rotated_by (angle_between(s,s+{10,0},t) + 90);
+					geometry l2 <- polyline([front.location - {ROAD_WIDTH,0}, front.location, front.location + {ROAD_WIDTH,0}]) rotated_by (angle_between(s,s+{10,0},t) + 90);
+
+					if ((l1 intersects polyline([s, t]) = true) or (l2 intersects polyline([s, t]) = true)) {
+						start_node <- s;
+						target_node <- t;
+						angle <- angle_between(s, s + {10,0}, t);
+						do update_polygon;
+						do check_direction;	
+						do get_future_node;
+						do get_transfer_geom;
+						is_transferred <- false;
+					}
+				}
+			} 
+			
+			// next road case
+			if ((get_next_road() != nil)) {
+				road next_road <- get_next_road();
+				list<point> next_road_points <- (first(next_road.shape.points) = last(road_belong_nodes)) ? next_road.shape.points : reverse(next_road.shape.points);
+				if (location overlaps next_road.geom_display) {
+					loop i from:0 to:length(next_road_points) - 2 {
+						point s <- next_road_points[i];
+						point t <- next_road_points[i+1];
+						geometry l <- polyline([location - {ROAD_WIDTH,0}, location, location + {ROAD_WIDTH,0}])
+						 rotated_by (angle_between(s,s+{10,0},t) + 90);
+						if (l intersects polyline([s, t]) = true) {
+							start_node <- s;
+							target_node <- t;
+							angle <- angle_between(s, s + {10,0}, t);
+							do update_polygon;
+							do check_direction;	
+							do get_future_node;
+							do get_transfer_geom;
+							is_transferred <- false;
+	
+							road_belong <- next_road;
+							road_belong_nodes <- next_road_points;
+						}
+					}
+				} 	
+			}
+		}
+	}
+	
+	action define_new_segment {
+		geometry current <- polyline([start_node,target_node]) + ROAD_WIDTH;
+		if (check_current_segment() = false) {
+			if (location overlaps road_belong.geom_display) {
+				int index <- (road_belong_nodes index_of start_node);
+				loop i from:index to:length(road_belong_nodes) - 2 {
+					point s <- road_belong_nodes[i];
+					point t <- road_belong_nodes[i+1];
+					geometry m <- polyline([s, t]) + ROAD_WIDTH;
+					if (location overlaps m) {
+						start_node <- s;
+						target_node <- t;
+						angle <- angle_between(start_node, start_node + {10,0}, target_node);
+						do update_polygon;
+						do check_direction;	
+						do get_future_node;
+						do get_transfer_geom;
+						is_transferred <- false;
+					}
+				}
+			} 
+			
+			if ((get_next_road() != nil)) and (location overlaps get_next_road().geom_display){
+				road next_road <- get_next_road();
+				list<point> next_road_points <- (first(next_road.shape.points) = last(road_belong_nodes)) ? next_road.shape.points : reverse(next_road.shape.points);
+			
+				loop i from:0 to:length(next_road_points) - 2 {
+					point s <- next_road_points[i];
+					point t <- next_road_points[i+1];
+					geometry m <- polyline([s, t]) + ROAD_WIDTH;
+					if (location overlaps m) {
+						start_node <- s;
+						target_node <- t;
+						angle <- angle_between(s, s + {10,0}, t);
+						do update_polygon;
+						do check_direction;	
+						do get_future_node;
+						do get_transfer_geom;
+						is_transferred <- false;
+	
+						road_belong <- next_road;
+						road_belong_nodes <- next_road_points;
+					}
+				}
+			}
+		}
+	}
+	
 	action handle_right_corner {
 		point start <- transfer_geom.points[0];
 		point end <- transfer_geom.points[2];
 		point middle <- transfer_geom.points[1];
 		
-//		if (is_transferred = false) and (current overlaps polyline([middle, start])){
 		if (is_transferred = false) {
 			point x8 <- (start + end)/2;
 			point x1 <- (start*7 + x8)/8;
@@ -505,6 +607,7 @@ species vehicle skills:[moving] {
 			location <- closest_list[0];
 //			target <- closest_list[0];
 			
+			//ver1
 			float gamma <- angle_between(target_node, future_node, start);
 			float d1 <- distance_to(target_node, start)*cos(gamma);
 			float d <- distance_to(target_node, future_node);
@@ -512,13 +615,30 @@ species vehicle skills:[moving] {
 			float h <- (future_node - target_node).y;
 			point a <- target_node + {d1*g/d, d1*h/d};
 			point b <- a + a - start;
-			
 			is_transferred <- true;
 			start_node <- target_node - (a - middle);
 			angle <- angle_between(middle, middle + {10,0}, a);
 			transfer_geom <- polyline([start, a, b]);
+			
+			if (current overlaps transfer_geom) {
+				do change_road;
+			}
 		} else {
 			do change_road;
+			do define_new_segment;
+		}
+	}
+	
+	action handle_right_corner_ver2 {
+		point start <- transfer_geom.points[0];
+		point end <- transfer_geom.points[2];
+		point middle <- transfer_geom.points[1];
+		
+		if middle = target_node {
+			do change_road;
+			do define_new_segment;
+		} else {
+			do handle_right_corner;
 		}
 	}
 	
@@ -528,7 +648,6 @@ species vehicle skills:[moving] {
 		point middle <- transfer_geom.points[1];
 
 		if (is_transferred = false) and (current overlaps polyline([middle, start])) {
-//		if (is_transferred = false) {
 			point x8 <- (start + end)/2;
 			point x1 <- (start*7 + x8)/8;
 			point x2 <- (start*6 + x8*2)/8;
@@ -565,9 +684,18 @@ species vehicle skills:[moving] {
 			// update angle, nodes
 			angle <- angle_between(start, start + {10,0}, y);
 			start_node <- target_node - (y - start);
+			
+			if (current overlaps transfer_geom) {
+				do change_road;
+			}
 		} else {
 			do change_road;
 		}
+	}
+
+	bool check_current_segment {
+		geometry l <- polyline([location - {10, 0}, location, location + {10,0}]) rotated_by (angle + 90);
+		return (l intersects polyline([start_node, target_node]));
 	}
 	
 	action change_road {
@@ -580,7 +708,7 @@ species vehicle skills:[moving] {
 	}
 	
 	action check_change_road {
-		if future_node = nil {
+		if (future_node = nil) {
 			if (current overlaps transfer_geom) {
 				do die;
 			}
@@ -589,8 +717,8 @@ species vehicle skills:[moving] {
 				do handle_left_corner;
 			} 
 			else if (angle_between(start_node, target_node, future_node) < 180) and (current overlaps transfer_geom) {
-				do handle_right_corner;
-			}
+				do handle_right_corner_ver2;
+			} 
 		}
 	}
 	

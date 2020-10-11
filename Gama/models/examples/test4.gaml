@@ -34,14 +34,8 @@ global {
 		
 		create roadNode from: shape_file_roadNodes;
 		road_network <- (as_driving_graph(road, roadNode));
-		write road_network;
-//		loop i from:0 to: length(roadNode) - 1 {
-//			write roadNode(i);
-//			write roadNode(i).location;
-//		}
 	}
 	
-//	when:mod(cycle,5)=0
 	reflex init_traffic when:mod(cycle,4)=0 {
 		create vehicle number: 1 {
 			type <- flip(0.3) ? 'CAR' : 'MOTORBIKE';
@@ -71,12 +65,9 @@ global {
 			speed <- INIT_SPEED;
 			prob_go_opposite <- PROB_GO_OPPOSITE;
 			prob_turn_right <- PROB_TURN_RIGHT;
-			display_polygon <- true;
+			display_polygon <- false;
 			source_node <- one_of([roadNode(0),roadNode(3),roadNode(6),roadNode(8)]);
 			final_node <- one_of([roadNode(0),roadNode(3),roadNode(6),roadNode(8)]);
-
-//			source_node <- roadNode(6);
-//			final_node <- roadNode(0);
 			
 			do compute_shortest_path;
 			if length(shortest_path) = 0 { do die; }
