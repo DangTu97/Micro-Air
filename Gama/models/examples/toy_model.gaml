@@ -17,7 +17,7 @@ global {
 	geometry shape <- square(EVIRONMENT_SIZE);
 	float step <- STEP;
 	int unit <- 20;
-	int traffic_volume_bottom <- 5; 
+	int traffic_volume_bottom <- 3; 
 	int traffic_volume_top <- 5; 
 	float PROB_GO_OPPOSITE <- 1.0;
 	
@@ -41,7 +41,9 @@ global {
 	
 	reflex init_traffic when: mod(cycle, unit) = 0 {
 		create vehicle number: traffic_volume_bottom {
-				type <- flip(CAR_PERCENT) ? 'CAR' : 'MOTORBIKE';
+				int i <- rnd(1, 100);
+				type <- (i < 2) ? 'BUS' : ( i < 20 ? 'CAR' : 'MOTORBIKE');
+				
 				if type = 'CAR' {
 					length <- CAR_LENGTH;
 					width <- CAR_WIDTH;
@@ -50,7 +52,7 @@ global {
 					dx <- width/2 + db;
 					dy <- length/2 + df;
 					max_speed <- rnd(CAR_MAXSPEED/2, CAR_MAXSPEED);
-				} else {
+				} else if type = 'MOTORBIKE' {
 					length <- MOTORBIKE_LENGTH;
 					width <- MOTORBIKE_WIDTH;
 					df <- MOTORBIKE_DF;
@@ -58,6 +60,14 @@ global {
 					dx <- width/2 + db;
 					dy <- length/2 + df;
 					max_speed <- rnd(MOTORBIKE_MAXSPEED/2, MOTORBIKE_MAXSPEED);
+				} else {
+					length <- BUS_LENGTH;
+					width <- BUS_WIDTH;
+					df <- BUS_DF;
+					db <- BUS_DB;
+					dx <- width/2 + db;
+					dy <- length/2 + df;
+					max_speed <- BUS_MAXSPEED;
 				}
 	
 				width_size <- WIDTH_SIZE;
@@ -152,7 +162,9 @@ global {
 			}
 			
 			create vehicle number: traffic_volume_top {
-				type <- flip(CAR_PERCENT) ? 'CAR' : 'MOTORBIKE';
+				int i <- rnd(1, 100);
+				type <- (i < 2) ? 'BUS' : ( i < 20 ? 'CAR' : 'MOTORBIKE');
+				
 				if type = 'CAR' {
 					length <- CAR_LENGTH;
 					width <- CAR_WIDTH;
@@ -161,7 +173,7 @@ global {
 					dx <- width/2 + db;
 					dy <- length/2 + df;
 					max_speed <- rnd(CAR_MAXSPEED/2, CAR_MAXSPEED);
-				} else {
+				} else if type = 'MOTORBIKE' {
 					length <- MOTORBIKE_LENGTH;
 					width <- MOTORBIKE_WIDTH;
 					df <- MOTORBIKE_DF;
@@ -169,6 +181,14 @@ global {
 					dx <- width/2 + db;
 					dy <- length/2 + df;
 					max_speed <- rnd(MOTORBIKE_MAXSPEED/2, MOTORBIKE_MAXSPEED);
+				} else {
+					length <- BUS_LENGTH;
+					width <- BUS_WIDTH;
+					df <- BUS_DF;
+					db <- BUS_DB;
+					dx <- width/2 + db;
+					dy <- length/2 + df;
+					max_speed <- BUS_MAXSPEED;
 				}
 	
 				width_size <- WIDTH_SIZE;
@@ -266,7 +286,8 @@ global {
 	reflex count_vehicles {
 		nb_top <- length(vehicle where (each.source_node = nodes[1] and each.on_right_side = false));
 		nb_bottom <- length(vehicle where (each.source_node = nodes[0] and each.on_right_side = false));
-		if nb_bottom + nb_top >= 5 {
+		if (nb_bottom + nb_top >= 4) and (abs(nb_bottom - nb_top) >= 3) and cycle > 500  and min(nb_bottom, nb_top) > 0{
+//		if (abs(nb_bottom - nb_top) >= 12) {
 			do pause;
 		}
 	}
@@ -287,8 +308,8 @@ experiment my_experiment {
 		}
 		monitor "Upper lane flow" value: 5;
 		monitor "Lower lane flow" value: 1;
-		monitor "Number of wrong vehicles on upper lane" value: 1;
-		monitor "Number of wrong vehicles on lower lane" value: 12;
+		monitor "Number of wrong vehicles on upper lane" value: nb_top;
+		monitor "Number of wrong vehicles on lower lane" value: nb_bottom;
 //		monitor "P" value: PROB_GO_OPPOSITE;
 	}
 }

@@ -14,7 +14,7 @@ global {
 	geometry shape <- square(500);
 	float step <- 0.05#s;
 	int nb_vehicles;
-	int traffic_volume <- 2;
+	int traffic_volume <- 5;
 	int road_width <- ROAD_WIDTH;
 	init {
 		list<list<point>> my_nodes <- [[{100,50}, {100,100}], [{100,100}, {100,150}], [{50,100}, {100,100}], [{100,100}, {150,100}]];
@@ -124,7 +124,11 @@ global {
 		
 		if length(targets) > 1 {
 			create vehicle number: traffic_volume {
-				type <- flip(CAR_PERCENT) ? 'CAR' : 'MOTORBIKE';
+//				type <- flip(CAR_PERCENT) ? 'CAR' : 'MOTORBIKE';
+				
+				int i <- rnd(1, 100);
+				type <- (i < 2) ? 'BUS' : ( i < 20 ? 'CAR' : 'MOTORBIKE');
+					
 				if type = 'CAR' {
 					length <- CAR_LENGTH;
 					width <- CAR_WIDTH;
@@ -133,7 +137,7 @@ global {
 					dx <- width/2 + db;
 					dy <- length/2 + df;
 					max_speed <- CAR_MAXSPEED;
-				} else {
+				} else if type = 'MOTORBIKE' {
 					length <- MOTORBIKE_LENGTH;
 					width <- MOTORBIKE_WIDTH;
 					df <- MOTORBIKE_DF;
@@ -141,6 +145,14 @@ global {
 					dx <- width/2 + db;
 					dy <- length/2 + df;
 					max_speed <- MOTORBIKE_MAXSPEED;
+				} else {
+					length <- BUS_LENGTH;
+					width <- BUS_WIDTH;
+					df <- BUS_DF;
+					db <- BUS_DB;
+					dx <- width/2 + db;
+					dy <- length/2 + df;
+					max_speed <- BUS_MAXSPEED;
 				}
 				
 				speed <- INIT_SPEED;
