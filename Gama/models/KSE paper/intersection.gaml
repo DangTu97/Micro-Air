@@ -6,7 +6,7 @@
 ***/
 
 model intersection
-import "../vehicle.gaml"
+import "vehicle.gaml"
 import "../global_variables.gaml"
 /* Insert your model definition here */
 
@@ -270,6 +270,5 @@ experiment my_experiment {
 			}
 		}
 		monitor "No. vehicles" value: nb_vehicles;
-		//monitor "Traffic volumne" value: traffic_volume;
 	}
 }

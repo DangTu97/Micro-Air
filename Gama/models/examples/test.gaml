@@ -112,7 +112,13 @@ global {
 			target_node <- road_belong_nodes[1];
 			angle <- angle_between(start_node, start_node + {10,0}, target_node);
 			
-			location <- start_node + {0,rnd(1,7)};
+			float D <- ROAD_WIDTH;
+			float a <- (target_node - start_node).location.x;
+			float b <- (target_node - start_node).location.y;   
+			point right_point <- start_node + {-b*D/sqrt(a*a + b*b), a*D/sqrt(a*a + b*b)};
+			float lambda <- rnd(0.1,0.9);
+			location <- (start_node*lambda + right_point*(1-lambda));
+			
 			do update_polygon;
 			
 			do get_future_node;
