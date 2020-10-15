@@ -8,7 +8,7 @@
 model toymodel
 
 /* Insert your model definition here */
-import "../vehicle.gaml"
+import "vehicle.gaml"
 import "../global_variables.gaml"
 
 global {
@@ -131,11 +131,9 @@ global {
 					}
 				}
 				
-	//			write future_node;
 				if (future_node != nil)  {
 					float alpha <- angle_between(target_node, start_node, future_node);
 					float k;
-	//				write alpha;
 					if (alpha = 180) {
 						target_space <- polyline([target_node - {1.5*ROAD_WIDTH, 0}, target_node + {1.5*ROAD_WIDTH, 0}]) rotated_by (angle + 90);
 					} else {
@@ -252,11 +250,9 @@ global {
 					}
 				}
 				
-	//			write future_node;
 				if (future_node != nil)  {
 					float alpha <- angle_between(target_node, start_node, future_node);
 					float k;
-	//				write alpha;
 					if (alpha = 180) {
 						target_space <- polyline([target_node - {1.5*ROAD_WIDTH, 0}, target_node + {1.5*ROAD_WIDTH, 0}]) rotated_by (angle + 90);
 					} else {
@@ -287,7 +283,6 @@ global {
 		nb_top <- length(vehicle where (each.source_node = nodes[1] and each.on_right_side = false));
 		nb_bottom <- length(vehicle where (each.source_node = nodes[0] and each.on_right_side = false));
 		if (nb_bottom + nb_top >= 4) and (abs(nb_bottom - nb_top) >= 3) and cycle > 500  and min(nb_bottom, nb_top) > 0{
-//		if (abs(nb_bottom - nb_top) >= 12) {
 			do pause;
 		}
 	}
@@ -310,6 +305,5 @@ experiment my_experiment {
 		monitor "Lower lane flow" value: 1;
 		monitor "Number of wrong vehicles on upper lane" value: nb_top;
 		monitor "Number of wrong vehicles on lower lane" value: nb_bottom;
-//		monitor "P" value: PROB_GO_OPPOSITE;
 	}
 }

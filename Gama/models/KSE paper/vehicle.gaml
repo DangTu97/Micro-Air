@@ -6,7 +6,7 @@
 ***/
 
 model vehicle
-import "global_variables.gaml"
+import "../global_variables.gaml"
 
 /* Insert your model definition here */
 
@@ -120,7 +120,6 @@ species vehicle skills:[moving] {
 	bool is_on_road(geometry geom) {
 		bool is_on_road <- false;
 		ask road {
-//			if ((geom.location overlaps self.geom_display) and (self = myself.road_belong)) {
 			if (geom.location overlaps self.geom_display) {
 				is_on_road <- true;
 			}
@@ -193,12 +192,6 @@ species vehicle skills:[moving] {
 	}
 	
 	action compute_road_belong_nodes {
-//		if (distance_to(start_node,first(road_belong.shape.points)) < 1) {
-//			road_belong_nodes <- road_belong.shape.points;
-//		} else {
-//			road_belong_nodes <- reverse(road_belong.shape.points);
-//		}
-
 		if (start_node = first(road_belong.shape.points)) {
 			road_belong_nodes <- road_belong.shape.points;
 		} else if (start_node = last(road_belong.shape.points)) {
@@ -422,12 +415,6 @@ species vehicle skills:[moving] {
 	}
 	
 	action check_change_road {
-//		if (distance_to(location, target_node) <= distance_check) {
-//		if (current overlaps target_space) {
-//			do change_node;
-//			do update_polygon;
-//		}
-
 		// action change node for twoway road
 		if (current overlaps target_space) {
 			point p1 <- start_node;
@@ -439,7 +426,6 @@ species vehicle skills:[moving] {
 			do update_polygon;
 			do check_direction;
 			
-			// or (check_go_straight = false)
 			if (check_right_side(front) = false) or (is_on_road(front) = false)  {
 				start_node <- p1;
 				target_node <- p2;
@@ -478,13 +464,10 @@ species vehicle skills:[moving] {
 			draw front color: #red;
 			draw left color: #blue;
 			draw right color: #blue;
-//			draw target_space color:#red;
-//			draw free_space color:#red;
 		}
 		
 		if (type = 'CAR') {
 			draw IMAGES[0] size: {length, width} rotate:heading;
-//			draw circle(0.5) color:#red at: location + {length/2,0};
 		} else if (type = 'MOTORBIKE') {
 			draw IMAGES[1] size: {length, width} rotate:heading;
 		} else if (type = 'BUS'){

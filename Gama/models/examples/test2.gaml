@@ -20,7 +20,6 @@ global {
 			width <- ROAD_WIDTH;
 			geom_display <- shape + width;
 		}
-		
 		road_network <- as_edge_graph(road);
 		
 		create vehicle number:50 {
@@ -46,26 +45,21 @@ global {
 			
 			source_node <- one_of(road_network.vertices);
 			final_node <- one_of(road_network.vertices);
-
 //			source_node <- {398.9000000000233,810.9811546797864};
 //			final_node <- {94.09999999997672,920.0811546798795};
-
+//			write angle_between({136.90000000002328,899.5811546798795,0.0}, {135.09999999997672,900.1811546799727,0.0},{126.69999999995343,902.9811546797864,0.0});
 			do compute_shortest_path;
-			write shortest_path;
 			if length(shortest_path) = 0 { do die; }
 			road_belong <-  shortest_path[0];
 			start_node <- source_node;
 			do compute_road_belong_nodes;
 			target_node <- road_belong_nodes[1];
 			angle <- angle_between(start_node, start_node + {10,0}, target_node);
-			
 			location <- start_node;
 			do update_polygon;
-			
 			do get_future_node;
 			do get_transfer_geom;
 			is_transferred <- false;
-//			write angle_between({136.90000000002328,899.5811546798795,0.0}, {135.09999999997672,900.1811546799727,0.0},{126.69999999995343,902.9811546797864,0.0});
 		}
 	}
 }

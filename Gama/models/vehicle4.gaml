@@ -14,6 +14,20 @@ global {
 	graph road_network;
 }
 
+species init_space {
+	geometry geom;
+	point my_point;
+	aspect base {
+		draw geom color: #blue border:#black;
+	}
+}
+
+species block_space {
+	aspect base {
+		draw shape color: #blue;
+	}
+}
+
 species traffic_light {
 	int counter;
 	rgb color;
@@ -116,6 +130,7 @@ species vehicle skills:[moving] {
 	
 	geometry transfer_geom;
 	bool is_transferred;
+	geometry free_space;
 	
 	action compute_shortest_path {
    		path path_computed <- path_between(road_network, source_node, final_node);

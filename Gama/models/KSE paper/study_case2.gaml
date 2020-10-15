@@ -6,7 +6,7 @@
 ***/
 
 model studycase2
-import "../vehicle.gaml"
+import "vehicle.gaml"
 import "../global_variables.gaml"
 
 /* Insert your model definition here */
@@ -46,7 +46,6 @@ global {
 		}
 	}
 	
-	//when:mod(cycle, 20)=0
 	reflex init_traffic when: mod(cycle, 8) = 0 {
 		create vehicle number: 1 {
 			int k <- rnd(100);
@@ -136,11 +135,9 @@ global {
 				}
 			}
 			
-//			write future_node;
 			if (future_node != nil)  {
 				float alpha <- angle_between(target_node, start_node, future_node);
 				float k;
-//				write alpha;
 				if (alpha = 180) {
 					target_space <- polyline([target_node - {1.5*ROAD_WIDTH, 0}, target_node + {1.5*ROAD_WIDTH, 0}]) rotated_by (angle + 90);
 				} else {
@@ -178,7 +175,6 @@ experiment my_experiment {
 		display my_display background: #grey{
 			species road aspect: base;
 			species vehicle aspect: base;
-//			species init_space aspect: base;
 		}
 		
 		display my_chart refresh:every(200#cycle) {

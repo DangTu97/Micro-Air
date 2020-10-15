@@ -53,7 +53,7 @@ global {
 	float BUS_MAXSPEED <- 16.6 #m/#s;
 	
 	float INIT_SPEED <- 8 #m/#s;
-	float PROB_GO_OPPOSITE <- 1.0;
+	float PROB_GO_OPPOSITE <- 0.0;
 	float PROB_TURN_RIGHT <- 1.0;
 	float TIME_STEP <- 0.05 #s;
 	
