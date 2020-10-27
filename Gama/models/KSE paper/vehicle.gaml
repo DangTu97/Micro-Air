@@ -21,9 +21,9 @@ global {
 species traffic_light  {
 	int counter;
 	rgb color;
-	float t_g;
-	float t_y;
-	float t_r;
+	int t_g;
+	int t_y;
+	int t_r;
 	
 	// additional variables
 	bool is_green;
@@ -116,6 +116,98 @@ species vehicle skills:[moving] {
 	int timer;
 	string gender;
 	string age;
+	
+	init {
+		speed <- INIT_SPEED;
+		width_size <- WIDTH_SIZE;
+		minimun_length_size <- MINIMUM_LENGTH_SIZE;
+		distance_check <- DISTANCE_CHECHK;
+		acceleration_factor <- ACCELERATION_FACTOR;
+		deceleration_factor <- DECELERATION_FACTOR;
+		prob_go_opposite <- PROB_GO_OPPOSITE;
+		prob_turn_right <- PROB_TURN_RIGHT;
+		display_polygon <- false;
+	}
+	
+	action set_type {
+		if type = 'CAR' {
+			length <- CAR_LENGTH;
+			width <- CAR_WIDTH;
+			df <- CAR_DF;
+			db <- CAR_DB;
+			dx <- width/2 + db;
+			dy <- length/2 + df;
+		} else if type = 'MOTORBIKE' {
+			length <- MOTORBIKE_LENGTH;
+			width <- MOTORBIKE_WIDTH;
+			df <- MOTORBIKE_DF;
+			db <- MOTORBIKE_DB;
+			dx <- width/2 + db;
+			dy <- length/2 + df;
+		} else {
+			length <- BUS_LENGTH;
+			width <- BUS_WIDTH;
+			df <- BUS_DF;
+			db <- BUS_DB;
+			dx <- width/2 + db;
+			dy <- length/2 + df;
+		}
+		
+		display_polygon <- false;
+		do compute_shortest_path;
+		if length(shortest_path) = 0 { do die; }
+		road_belong <-  shortest_path[0];
+		start_node <- source_node;
+		do compute_road_belong_nodes;
+		target_node <- road_belong_nodes[1];
+		angle <- angle_between(start_node, start_node + {10,0}, target_node);
+		do update_polygon;		
+		point future_node;
+		point x1;
+		point x2;
+		point x3;
+		point x4; 
+		// x1, x2, x3, x4 form a parallelogram
+		int my_idx <- (road_belong_nodes index_of target_node);
+		if (my_idx < length(road_belong_nodes) - 1) {
+			future_node <- road_belong_nodes[my_idx + 1];
+		} else {
+			road my_feature_road <- get_next_road();
+			if (my_feature_road != nil) {
+				if (target_node = first(my_feature_road.shape.points)) {
+					future_node <- my_feature_road.shape.points[1];
+				} else if (target_node = last(my_feature_road.shape.points)) {
+					future_node <- reverse(my_feature_road.shape.points)[1];
+				}
+			}
+		}
+		
+		if (future_node != nil)  {
+			float alpha <- angle_between(target_node, start_node, future_node);
+			float k;
+			if (alpha = 180) {
+				target_space <- polyline([target_node - {1.5*ROAD_WIDTH, 0}, target_node + {1.5*ROAD_WIDTH, 0}]) rotated_by (angle + 90);
+			} else {
+				if (alpha > 180) { alpha <- alpha - 180; if (alpha < 90) { alpha <- 180 - alpha; }}
+				float k <- ROAD_WIDTH/sin(180 - alpha);
+				x2 <- target_node;
+				float a <- (start_node - target_node).x;
+				float b <- (start_node - target_node).y;
+				float d <- distance_to(target_node, start_node);
+				point x1 <- x2 + {k*a/d, k*b/d};
+				
+				float A <- (future_node - target_node).x;
+				float B <- (future_node - target_node).y;
+				float D <- distance_to(future_node, target_node);
+				point x3 <- x2 + {k*A/D, k*B/D};
+				
+				point center <- (x1 + x3)/2;
+				point x4 <- center*2 - x2;
+				point newpoint <- x2*2 - x4;
+				target_space <- polyline([newpoint,x4]);
+			}
+		} else { target_space <- polyline([target_node - {1.5*ROAD_WIDTH, 0}, target_node + {1.5*ROAD_WIDTH, 0}]) rotated_by (angle + 90); }
+	}
 	
 	bool is_on_road(geometry geom) {
 		bool is_on_road <- false;
@@ -267,7 +359,6 @@ species vehicle skills:[moving] {
 					
 					point center <- (x1 + x3)/2;
 					point x4 <- center*2 - x2;
-					point x4 <- center*2 - x2;
 					point newpoint <- x2*2 - x4;
 					target_space <- polyline([newpoint,x4]);
 				}
@@ -352,7 +443,7 @@ species vehicle skills:[moving] {
 	action observe_traffic_light {
 		if ((road_belong.light_belong != nil) and (front overlaps road_belong.light_belong.my_geom) and (angle = road_belong.light_belong.direction_control)) {
 			if (road_belong.light_belong.is_green = false) {
-				speed <- 0;
+				speed <- 0.0;
 			}
  		}
 	}
@@ -380,7 +471,7 @@ species vehicle skills:[moving] {
 		}	
 				
 		if (block_space(0) overlaps front) or (block_space(0) overlaps current) {
-			target <- right;
+			target <- right.location;
 		}
 	}
 	

@@ -19,9 +19,9 @@ global {
 	float ROAD_WIDTH <- 8.0;
 	
 	// attributes of traffic light;
-	float GREEN_TIME <- 400; // with STEP = 0.05 #s, this means GREEN_TIME = 20s
-	float YELLOW_TIME <- 80;
-	float RED_TIME <- 480; // RED_TIME = GREEN_TIME + YELLLOW_TIME
+	int GREEN_TIME <- 400; // with STEP = 0.05 #s, this means GREEN_TIME = 20s
+	int YELLOW_TIME <- 80;
+	int RED_TIME <- 480; // RED_TIME = GREEN_TIME + YELLLOW_TIME
 	
 	
 	// attributes of vehicle
