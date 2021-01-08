@@ -60,6 +60,20 @@ global {
 	// percent of car 
 	float CAR_PERCENT <- 0.2;
 	
+	// diffusion of emission variables
+	float wind_speed <- 2.0#m/#s;
+	float wind_dir <- 30.0;
+	float de_power_coeff <- 0.05;
+	
+	map<string, int> RCO <- ['CAR' :: 3, 'MOTORBIKE' :: 1, 'BUS' :: 10];
+	map<string, int> RNOx <- ['CAR' :: 3, 'MOTORBIKE' :: 1, 'BUS' :: 10];
+	map<string, int> RSO2 <- ['CAR' :: 3, 'MOTORBIKE' :: 1, 'BUS' :: 10];
+	map<string, int> RPTM <- ['CAR' :: 3, 'MOTORBIKE' :: 1, 'BUS' :: 10];
+	
+	//map<string, float> VDIFF <- ['CAR' :: 0.3#m/#s, 'MOTORBIKE' :: 0.2#m/#s, 'BUS' :: 0.5#m/#s];
+	
+	//map<string, float> V0 <- ['CAR' :: 2#m/#s, 'MOTORBIKE' :: 1.5#m/#s, 'BUS' :: 3#m/#s];
+		
 	// parameter
 	float CAR_SAFESPEED_MALE <- 11.1 #m/#s;
 	float CAR_SAFESPEED_FEMALE <- 10.0 #m/#s;
