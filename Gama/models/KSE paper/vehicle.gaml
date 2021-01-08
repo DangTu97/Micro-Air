@@ -7,6 +7,7 @@
 
 model vehicle
 import "../global_variables.gaml"
+import"emission.gaml"
 
 /* Insert your model definition here */
 
@@ -207,6 +208,19 @@ species vehicle skills:[moving] {
 				target_space <- polyline([newpoint,x4]);
 			}
 		} else { target_space <- polyline([target_node - {1.5*ROAD_WIDTH, 0}, target_node + {1.5*ROAD_WIDTH, 0}]) rotated_by (angle + 90); }
+	}
+	
+	// action create new emisson
+	action creEmis(int _nb, string _type, float pw /*, float diff, float sts*/){
+		create Emis number: _nb{
+			root <- myself;
+			type <- _type;
+			power <- pw;
+			starting_heading <- -self.heading;
+			//diff_speed <- diff;
+			//starting_speed <- sts;
+			location <- myself.location;
+		}
 	}
 	
 	bool is_on_road(geometry geom) {
@@ -547,6 +561,13 @@ species vehicle skills:[moving] {
 		do observe_traffic_light;
 		do goto target: target speed:speed;
 		do update_polygon;
+	}
+	
+	reflex release_emission{
+		do creEmis(RCO[self.type], 'CO', 3.0);
+		do creEmis(RNOx[self.type], 'NOx', 3.0);
+		do creEmis(RSO2[self.type], 'SO2', 3.0);
+		do creEmis(RPTM[self.type], 'PTM', 3.0);
 	}
 	
 	aspect base {
