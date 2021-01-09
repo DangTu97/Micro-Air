@@ -6,7 +6,8 @@
 ***/
 
 model intersection
-import "vehicle.gaml"
+import "../KSE paper/vehicle.gaml"
+import "emission.gaml"
 import "../global_variables.gaml"
 /* Insert your model definition here */
 
@@ -17,6 +18,7 @@ global {
 	int traffic_volume <- 5;
 	float road_width <- ROAD_WIDTH;
 	init {
+		write step;
 		list<list<point>> my_nodes <- [[{100,50}, {100,100}], [{100,100}, {100,150}], [{50,100}, {100,100}], [{100,100}, {150,100}]];
 		loop nodes over:my_nodes {
 			create road {
@@ -173,6 +175,7 @@ experiment my_experiment {
 //			species free_myspace aspect: base;
 //			species block_space aspect: base;
 			species vehicle aspect: base;
+			species Emis;
 		}
 		
 		display my_chart refresh:every(200#cycle) {
