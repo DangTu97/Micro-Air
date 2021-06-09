@@ -7,7 +7,7 @@
 
 
 model emission
-import "../global_variables.gaml"
+import "global_variables.gaml"
 import "vehicle.gaml"
 /* Insert your model definition here */
 

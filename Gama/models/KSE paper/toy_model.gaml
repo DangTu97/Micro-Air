@@ -9,7 +9,7 @@ model toymodel
 
 /* Insert your model definition here */
 import "vehicle.gaml"
-import "../global_variables.gaml"
+import "global_variables.gaml"
 
 global {
 	list<point> nodes <- [{10, 50}, {210, 50}];

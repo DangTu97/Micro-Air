@@ -7,7 +7,7 @@
 
 model studycase2
 import "vehicle.gaml"
-import "../global_variables.gaml"
+import "global_variables.gaml"
 
 /* Insert your model definition here */
 

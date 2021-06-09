@@ -6,7 +6,7 @@
 ***/
 
 model vehicle
-import "../global_variables.gaml"
+import "global_variables.gaml"
 import"emission.gaml"
 
 /* Insert your model definition here */
@@ -563,12 +563,12 @@ species vehicle skills:[moving] {
 		do update_polygon;
 	}
 	
-	reflex release_emission{
-		do creEmis(RCO[self.type], 'CO', 3.0);
-		do creEmis(RNOx[self.type], 'NOx', 3.0);
-		do creEmis(RSO2[self.type], 'SO2', 3.0);
-		do creEmis(RPTM[self.type], 'PTM', 3.0);
-	}
+//	reflex release_emission{
+//		do creEmis(RCO[self.type], 'CO', 3.0);
+//		do creEmis(RNOx[self.type], 'NOx', 3.0);
+//		do creEmis(RSO2[self.type], 'SO2', 3.0);
+//		do creEmis(RPTM[self.type], 'PTM', 3.0);
+//	}
 	
 	aspect base {
 		if display_polygon {

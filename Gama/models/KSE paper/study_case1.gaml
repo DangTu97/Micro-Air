@@ -7,7 +7,7 @@
 
 model studycase1
 import "vehicle.gaml"
-import "../global_variables.gaml"
+import "global_variables.gaml"
 
 /* Insert your model definition here */
 global {
@@ -68,9 +68,12 @@ global {
 		}
 	}
 	
-	reflex init_traffic {	
+	reflex init_traffic when: mod(cycle, 20) = 0{	
 		loop i from:0 to:6 {
 			list<agent> var <- agents_overlapping(init_space(i).geom);
+			write '----';
+			write i;
+			write var;
 			if (length(var) <= 1 and i != 2) or (i = 2 and length(var) <= 2) {
 				create vehicle number: 1 {
 					if i = 0 { type <- flip(0.02) ? 'BUS' : 'CAR';}  
