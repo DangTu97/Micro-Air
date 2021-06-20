@@ -6,7 +6,7 @@
 */
 
 
-model intersectionshp
+model testintersection
 import '../species/vehicle.gaml'
 import '../species/GIS_species.gaml'
 import '../global_vars.gaml'
@@ -78,78 +78,42 @@ global {
 		}
 
 		create vehicle number:1 {
-			location <- {104, 115};
 			source_node <- road_network.vertices[2];
-			destination_node <- one_of(road_network.vertices[3], road_network.vertices[0], road_network.vertices[4]);
+			destination_node <- road_network.vertices[3];
 			type <- 'CAR';
 			do init_type;
-			speed <- 0.0;
+			location <- {102, 110};
+			speed <- rnd(max_speed/2, max_speed);
 			status <- 'inside_road';
 			debug <- false;
+			max_speed <- 0.5#m/#s;
 			do update_space;
 		}
 	}
 	
-	reflex init_traffic when:mod(cycle, 10) = 0 {
-		float p <- 0.6;
-		float q <- 0.75;
+	reflex init_traffic when:mod(cycle, 30) = 0 {
 		create vehicle number:1 {
 			source_node <- road_network.vertices[2];
-			destination_node <- flip(p) ? road_network.vertices[0] : one_of(road_network.vertices[3], road_network.vertices[4]);
-			type <- flip(q) ? 'MOTORBIKE' : 'CAR';
+			destination_node <- road_network.vertices[3];
+			type <- 'CAR';
 			do init_type;
-			location <- get_orthogonal_point(source_node, target_node, distance_to(source_node, target_node), rnd(0.2, 0.8)*width_of_road_belong);
+			location <- get_orthogonal_point(source_node, target_node, 30.0, rnd(0.2, 0.8)*width_of_road_belong);
 			speed <- rnd(max_speed/2, max_speed);
 			status <- 'inside_road';
 			debug <- false;
-			do update_space;
-		}
-		
-		create vehicle number:1 {
-			source_node <- road_network.vertices[0];
-			destination_node <- flip(p) ? road_network.vertices[2] : one_of(road_network.vertices[3], road_network.vertices[4]);
-			type <- flip(q) ? 'MOTORBIKE' : 'CAR';
-			do init_type;
-			location <- get_orthogonal_point(source_node, target_node, distance_to(source_node, target_node), rnd(0.2, 0.8)*width_of_road_belong);
-			speed <- rnd(max_speed/2, max_speed);
-			status <- 'inside_road';
-			debug <- false;
-			do update_space;
-		}
-		
-		create vehicle number:1 {
-			source_node <- road_network.vertices[3];
-			destination_node <- flip(p) ? road_network.vertices[4] : one_of(road_network.vertices[2], road_network.vertices[0]);
-			type <- flip(q) ? 'MOTORBIKE' : 'CAR';
-			do init_type;
-			location <- get_orthogonal_point(source_node, target_node, distance_to(source_node, target_node), rnd(0.2, 0.8)*width_of_road_belong);
-			speed <- rnd(max_speed/2, max_speed);
-			status <- 'inside_road';
-			debug <- false;
-			do update_space;
-		}
-		
-		create vehicle number:1 {
-			source_node <- road_network.vertices[4];
-			destination_node <- flip(p) ? road_network.vertices[3] : one_of(road_network.vertices[2], road_network.vertices[0]);
-			type <- flip(q) ? 'MOTORBIKE' : 'CAR';
-			do init_type;
-			location <- get_orthogonal_point(source_node, target_node, distance_to(source_node, target_node), rnd(0.2, 0.8)*width_of_road_belong);
-			speed <- rnd(max_speed/2, max_speed);
-			status <- 'inside_road';
-			debug <- false;
+			max_speed <- 15.0#m/#s;
 			do update_space;
 		}
 	}
 }
 
-experiment intersection_shp {
+experiment test_intersection {
 	float minimum_cycle_duration <- MINIMUM_DURATION; 
 	output {
 		display traffic background:#grey {
 			species road aspect:base;
 //			species roadNode aspect:base;
-//			species intersection aspect:base;
+			species intersection aspect:base;
 			species traffic_light aspect:base;
 			species vehicle aspect:base;
 		}

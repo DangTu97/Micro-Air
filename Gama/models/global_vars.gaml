@@ -19,7 +19,7 @@ global {
 	float MOTORBIKE_DB <- 0.05#m; 
 	float MOTORBIKE_MAXSPEED <- 11#m/#s;
 	image_file MOTORBIKE_IMAGE <- image_file("../../includes/motorbike.png");
-	float MOTORBIKE_ACCELERATION_RATE <- 0.5#m/#s;
+	float MOTORBIKE_ACCELERATION_RATE <- 2.0#m/#s;
 	float MOTORBIKE_DECELERATION_RATE <- 4.0#m/#s;
 	
 	//car

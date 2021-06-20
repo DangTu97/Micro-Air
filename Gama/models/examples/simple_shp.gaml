@@ -45,7 +45,7 @@ global {
 		}
 	}
 	
-	reflex init_traffic when:mod(cycle,10)=0 {
+	reflex init_traffic when:mod(cycle,4)=0 {
 		create vehicle number:1 {
 			type <- flip(0.3) ? 'CAR' : 'MOTORBIKE';
 			source_node <- road_network.vertices[1];

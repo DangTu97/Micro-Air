@@ -11,9 +11,9 @@ model testload
 /* Insert your model definition here */
 
 global {
-	file road_node_file <- file('../../includes/map/nodes.shp');
-	file road_file <- file('../../includes/map/edges.shp');
-	file bound_file <- file('../../includes/map/bound.shp');
+	file road_node_file <- file('../includes/map/nodes.shp');
+	file road_file <- file('../includes/map/edges.shp');
+	file bound_file <- file('../includes/map/bound.shp');
 	geometry shape <- envelope(bound_file);
 	init {
 		create roadnode from:road_node_file with:[type::read('highway')]{

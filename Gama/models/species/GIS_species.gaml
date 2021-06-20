@@ -126,7 +126,7 @@ species intersection {
 				road r2 <- roads[idx2];
 				list<geometry> t;
 				point orthogonal_r2 <- get_orthogonal_point(center_location, attached_points[idx2], 0.0, r2.width);
-				loop k from:0 to:n_strips[count] {
+				loop k from:1 to:n_strips[count] {
 					point p1 <- attached_points[idx1] + (orthogonal_r1 - attached_points[idx1])*(percent_sum + k/(n_strips[count])*percents[count]);
 					point p2 <- attached_points[idx2] + (orthogonal_r2 - attached_points[idx2])*(percent_sum + k/(n_strips[count])*percents[count]);
 					float alpha <- angle_between(center_location, attached_points[idx1], attached_points[idx2]);
@@ -146,8 +146,10 @@ species intersection {
 		list<geometry> conflict_space;
 		loop r over:roads {
 			int idx <- roads index_of r;
-			point p1 <- get_orthogonal_point(attached_points[idx], center_location, distance_from_center*percents[2], percents[0]*r.width);
-			point p2 <- get_orthogonal_point(attached_points[idx], center_location, distance_from_center*percents[2], (percents[0] + percents[1])*r.width);
+//			point p1 <- get_orthogonal_point(attached_points[idx], center_location, distance_from_center*percents[2], percents[0]*r.width);
+//			point p2 <- get_orthogonal_point(attached_points[idx], center_location, distance_from_center*percents[2], (percents[0] + percents[1])*r.width);
+			point p1 <- get_orthogonal_point(attached_points[idx], center_location, distance_from_center*0.4, percents[0]*r.width);
+			point p2 <- get_orthogonal_point(attached_points[idx], center_location, distance_from_center*0.4, (percents[0] + percents[1])*r.width);
 			point p3 <- p2 + (center_location - attached_points[idx])*1;
 			point p4 <- p1 + (center_location - attached_points[idx])*1;
 			conflict_space <- conflict_space + polygon([p1, p2, p3, p4, p1]);
@@ -226,9 +228,9 @@ species intersection {
 	
 	aspect base {
 		draw circle(0.5#m) at:location color: #green;
-		loop p over:attached_points {
-			draw circle(0.5#m) at:p color:#red;
-		}
+//		loop p over:attached_points {
+//			draw circle(0.5#m) at:p color:#red;
+//		}
 		loop strip over:strips {
 			loop s over:strip {
 				draw s color:#red;

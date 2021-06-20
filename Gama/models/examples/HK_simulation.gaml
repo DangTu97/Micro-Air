@@ -38,6 +38,15 @@ global {
 				}
 			}
 		}
+		
+		loop v over:road_network.vertices {
+			list<point> neighbors <- road_network neighbors_of v;
+			if length(neighbors) = 1 {
+				write "--";
+				write v;
+			}
+		}
+		
 		create vehicle number:1 {
 			source_node <- one_of(road_network.vertices);
 			destination_node <- one_of(road_network.vertices);
@@ -51,10 +60,25 @@ global {
 		}
 	}
 	
-	reflex init_traffic when:mod(cycle,1)=0 {
+	reflex init_traffic when:mod(cycle,2)=0 {
 		create vehicle number:1 {
-			source_node <- one_of(road_network.vertices);
-			destination_node <- one_of(road_network.vertices);
+			source_node <- one_of([roadNode(9), roadNode(10), roadNode(47), roadNode(23)]).location;
+			destination_node <- one_of([roadNode(53), roadNode(42), roadNode(20), roadNode(27), roadNode(55), roadNode(14), roadNode(34), roadNode(50),
+							            roadNode(11), roadNode(7)]).location;
+			type <- flip(0.5) ? 'MOTORBIKE' : 'CAR';
+			do init_type;
+			location <- flip(0.5) ? get_orthogonal_point(start_node, target_node, distance_to(start_node, target_node), rnd(dx, width_of_road_belong - dx)) :
+									start_node*2 - get_orthogonal_point(start_node, target_node, distance_to(start_node, target_node), rnd(dx, width_of_road_belong - dx));
+			speed <- rnd(max_speed/2, max_speed);
+			status <- 'inside_road';
+			debug <- false;
+			do update_space;
+		}
+		
+		create vehicle number:1 {
+			source_node <- one_of([roadNode(53), roadNode(42), roadNode(20), roadNode(27), roadNode(55), roadNode(14), roadNode(34), roadNode(50)]).location;
+			destination_node <- one_of([roadNode(53), roadNode(42), roadNode(20), roadNode(27), roadNode(55), roadNode(14), roadNode(34), roadNode(50),
+							            roadNode(11), roadNode(7)]).location;
 			type <- flip(0.5) ? 'MOTORBIKE' : 'CAR';
 			do init_type;
 			location <- get_orthogonal_point(source_node, target_node, distance_to(source_node, target_node), rnd(dx, width_of_road_belong - dx));

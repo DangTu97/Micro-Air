@@ -72,14 +72,6 @@ global {
 				}
 			}
 		}
-		
-//		loop rn over:roadNode {
-//			write rn.location;
-//		}
-
-//		loop rn over:road_network.vertices {
-//			write rn;
-//		}
 
 		create vehicle number:1 {
 			source_node <- one_of([roadNode(5), roadNode(7), roadNode(6), roadNode(1), roadNode(0), roadNode(2), roadNode(3), roadNode(4)]) as point;
@@ -94,17 +86,23 @@ global {
 		}
 	}
 	
-//	when:mod(cycle,2)=0
-	reflex init_traffic {
+	reflex init_traffic when:mod(cycle,2)=0 {
+		map<roadNode, roadNode> roadNode_pairs <- [roadNode(4)::roadNode(0), roadNode(0)::roadNode(4),
+														roadNode(3)::roadNode(6), roadNode(6)::roadNode(3),
+														roadNode(7)::roadNode(2), roadNode(2)::roadNode(7),
+														roadNode(5)::roadNode(1), roadNode(1)::roadNode(5)];
+		list<roadNode> nodes <- [roadNode(5), roadNode(7), roadNode(6), roadNode(1), roadNode(0), roadNode(2), roadNode(3), roadNode(4)];
 		float q <- 0.75;
+		float p <- 0.65;
 		create vehicle number:1 {
-			source_node <- one_of([roadNode(5), roadNode(7), roadNode(6), roadNode(1), roadNode(0), roadNode(2), roadNode(3), roadNode(4)]) as point;
-			destination_node <- one_of([roadNode(5), roadNode(7), roadNode(6), roadNode(1), roadNode(0), roadNode(2), roadNode(3), roadNode(4)] - source_node) as point;
+			roadNode r <- one_of(nodes);
+			source_node <- r as point;
+			destination_node <- flip(p) ? roadNode_pairs[r] as point : one_of(nodes - r) as point;
 			if source_node = destination_node { do die; }
 			type <- flip(q) ? 'MOTORBIKE' : 'CAR';
 			do init_type;
 			location <- get_orthogonal_point(source_node, target_node, distance_to(source_node, target_node), rnd(0.2, 0.8)*width_of_road_belong);
-			speed <- rnd(max_speed/2, max_speed);
+			speed <- rnd(max_speed/3, max_speed);
 			status <- 'inside_road';
 			debug <- false;
 			do update_space;
